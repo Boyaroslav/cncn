@@ -71,6 +71,7 @@ const event_type event_types[]= {
     {35, 1, "INPUT"}, // ввод в текстбокс до enter. аргумент - текст в начале (введите текст:). Я так понимаю в __input вместе с ним будет лететь строка
     {36, 4, "TBRECT"}, // set new rect of text box (-1, -1, -1, -1) sets the rect to original
     {37, 1, "TBFILL"}, // set new color of text box (hex, with opacity)
+    {38, 1, "HIDE"}, // hide sprite {id}
 
 
     
