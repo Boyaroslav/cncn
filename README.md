@@ -16,6 +16,7 @@ TODO
 interface
 global menu with ability of creating special stylized menu for novels
 textbox header drawing
+save and load support with ability to choose the save from the menu
 
 textbox support of button words in the text
 option commands
