@@ -22,6 +22,7 @@
 #include "textbox.cpp"
 #include "sprite.hpp"
 #include "gamemixer.hpp"
+#include "interface.hpp"
 #include <setjmp.h>
 
 #define LUA_COMMAND_ADD_MESSAGE_TO_TEXTBOX "txt"

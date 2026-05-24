@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <atomic>
+#include <variant>
 #include <unordered_map>
 #include <cstdint>
 #include <chrono>
