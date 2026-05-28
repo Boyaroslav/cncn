@@ -4,10 +4,10 @@
 
 class Button{
     SDL_Rect cords;
-    void (*event)();
+    std::function<void()> event;
     public:
 
-    Button(SDL_Rect c, void (*e)()){
+    Button(SDL_Rect c, std::function<void()> e){
         event = e;
         cords = c;
     }

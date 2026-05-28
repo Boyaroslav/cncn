@@ -20,7 +20,10 @@
 
 Font main_font;
 
+// TODO - добавить id к сообщениям чтобы lua и тд могли изменять смску по id а не только последнее
+
 struct message{
+    //uint8_t id=-1;
     std::string text;
     float speed; // frames per second
     std::chrono::steady_clock::time_point start_time;
@@ -33,7 +36,7 @@ class TextBox{
         SDL_Color Outline_color;
         int step = 1;
         std::string footer;
-        int line_height;
+        int line_height = 1;
         SDL_Rect border;
         int max_lines = 4;
         SDL_Color box_color = to_sdlc(DEFAULT_BOX_COLOR);

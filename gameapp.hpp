@@ -17,40 +17,28 @@
 #pragma once
 
 #include "utils.hpp"
-#include "vars.hpp"
 #include "loader.hpp"
 #include "textbox.cpp"
 #include "sprite.hpp"
 #include "gamemixer.hpp"
+#include "luaruntime.hpp"
 #include "interface.hpp"
 #include <setjmp.h>
 
-#define LUA_COMMAND_ADD_MESSAGE_TO_TEXTBOX "txt"
-#define LUA_COMMAND_CLEAR_TEXTBOX "cltb"
-#define LUA_COMMAND_CLEAR_ONE_MESSAGE "cllast"
-
-struct LuaCoroutine
-{
-    lua_State *co;
-    float wait_timer = 0.0f;
-    int lua_ref = LUA_NOREF;
-};
 
 class Screen
 {
 private:
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
+    LuaRuntime lua_runtime;
     int px, py;
     int event_pool_position = 0;
     uint32_t last_time;
     TextBox textbox;
-    jmp_buf row_resume_jmp;
-    jmp_buf row_wait_jmp;
     bool if_result = 1;
     Audio audio;
-    lua_State *L = nullptr;
-    std::vector<LuaCoroutine> lua_active_coroutines;
+
 
     int row_n = 0;
     int row_executed = 0;
@@ -140,43 +128,40 @@ public:
         main_font.load();
 
         vars_init();
-        L = luaL_newstate();
-        luaL_openlibs(L);
+
+        log("LETTER_SPEED" + std::to_string((double)get_value("LETTER_SPEED")));
+
+        lua_runtime = LuaRuntime();
+        lua_runtime.init();
+
         SDL_SetWindowTitle(window, (const char *)get_value("WINDOW_TITLE"));
 
         textbox = TextBox();
-        lua_pushlightuserdata(L, this);
-        lua_pushcclosure(L, [](lua_State *L) -> int
-                         {
-            Screen *self = (Screen *)lua_touserdata(L, lua_upvalueindex(1));
-            const char *text = luaL_checkstring(L, 1);
-            self->textbox.addMessage(std::string(text));
-            return 0; }, 1);
-        lua_setglobal(L, LUA_COMMAND_ADD_MESSAGE_TO_TEXTBOX);
 
-        // cl (clear)
-        lua_pushlightuserdata(L, this);
-        lua_pushcclosure(L, [](lua_State *L) -> int
-                         {
-            Screen *self = (Screen *)lua_touserdata(L, lua_upvalueindex(1));
-            self->textbox.cl();
-            return 0; }, 1);
-        lua_setglobal(L, LUA_COMMAND_CLEAR_TEXTBOX);
-        lua_pushlightuserdata(L, this);
-        lua_pushcclosure(L, [](lua_State *L) -> int
-                         {
-            Screen *self = (Screen *)lua_touserdata(L, lua_upvalueindex(1));
-            self->textbox.cllast();
-            return 0; }, 1);
-        lua_setglobal(L, LUA_COMMAND_CLEAR_ONE_MESSAGE);
-        lua_pushcfunction(L, [](lua_State *L) -> int
-                          {
-                              float t = (float)luaL_checknumber(L, 1);
-                              lua_pushnumber(L, t);   // передаём таймер в C++ через стек
-                              return lua_yield(L, 1); // 1 = одно возвращаемое значение
-                          });
-        lua_setglobal(L, "wait");
-        // bg.load_texture(renderer, "picture.png");
+        lua_runtime.TXT = [this](const std::string& text)
+        {
+            textbox.addMessage(text);
+            textbox.update_position(width, height);
+        };
+
+        lua_runtime.CLEAR = [this]()
+        {
+            textbox.cl();
+        };
+
+        lua_runtime.CLEAR_LAST = [this]()
+        {
+            textbox.cllast();
+        };
+
+        lua_runtime.INPUT = [this](const std::string& text)
+        {
+            SDL_StartTextInput();
+            textbox.IS_INPUT = true;
+
+            textbox.addMessage(text);
+            textbox.input_header_size = textbox.get_last()->size();
+        };
 
         return true;
     }
@@ -189,46 +174,7 @@ public:
         else
             load_scene_by_name(name, scenes);
     }
-    void sync_vars_to_lua(lua_State *state)
-    {
-        for (auto &[key, val] : variables)
-        {
-            if (val.is_int())
-                lua_pushinteger(state, val.as_int());
-            else if (val.is_float())
-                lua_pushnumber(state, val.as_float());
-            else
-                lua_pushstring(state, val.as_string().c_str());
-            lua_setglobal(state, key.c_str());
-        }
-    }
 
-    void sync_vars_from_lua(lua_State *state)
-    {
-        for (auto &[key, val] : variables)
-        {
-            lua_getglobal(state, key.c_str());
-            if (lua_isinteger(state, -1))
-                val = make_var((uint32_t)lua_tointeger(state, -1));
-            else if (lua_isnumber(state, -1))
-                val = make_var((double)lua_tonumber(state, -1));
-            else if (lua_isstring(state, -1))
-                val = make_var(std::string(lua_tostring(state, -1)));
-            lua_pop(state, 1);
-        }
-
-        // __ret → __return
-        lua_getglobal(state, "__ret");
-        if (lua_isinteger(state, -1))
-            variables["__return"] = make_var((uint32_t)lua_tointeger(state, -1));
-        else if (lua_isnumber(state, -1))
-            variables["__return"] = make_var((double)lua_tonumber(state, -1));
-        else if (lua_isstring(state, -1))
-            variables["__return"] = make_var(std::string(lua_tostring(state, -1)));
-        else if (lua_isboolean(state, -1))
-            variables["__return"] = make_var((uint32_t)lua_toboolean(state, -1));
-        lua_pop(state, 1);
-    }
 
     void nextEvent()
     {
@@ -273,6 +219,12 @@ public:
             printf("Scene '%s' not found!\n", scene_name);
             return false;
         }
+        function_commands_left = 0;
+        IN_ROW = 0;
+        current_event = nullptr;
+        if_result = 1;
+        NEED_MORE_EVENTS = 1;
+        sprites.clear();
 
         Scene &sc = scenes[index];
         current_scene = &sc;
@@ -282,52 +234,24 @@ public:
         return true;
     }
 
-    void handle_lua_coroutines(float delta_time)
-    {
-        for (auto it = lua_active_coroutines.begin(); it != lua_active_coroutines.end();)
-        {
-            if (it->wait_timer > 0.0f)
-            {
-                it->wait_timer -= delta_time;
-                ++it;
-                continue;
-            }
-
-            int nres = 0;
-            int status = lua_resume(it->co, L, 0, &nres);
-
-            if (status == LUA_YIELD)
-            {
-                if (nres > 0 && lua_isnumber(it->co, -1))
-                    it->wait_timer = (float)lua_tonumber(it->co, -1);
-                lua_pop(it->co, nres);
-                ++it;
-            }
-            else
-            {
-                if (status == LUA_OK)
-                    sync_vars_from_lua(it->co);
-                else
-                    printf("[LUA ERROR] %s\n", lua_tostring(it->co, -1));
-
-                luaL_unref(L, LUA_REGISTRYINDEX, it->lua_ref);
-                it = lua_active_coroutines.erase(it);
-            }
-        }
-    }
-
     void handleEvent(bool isnext_needed = true)
     {
-        std::cout << "HE " << (int)(current_event->id) << " \n";
+        
         if (!if_result &&
             current_event->id != 21 &&
             current_event->id != 22)
         {
-            if (isnext_needed)
-                nextEvent();
             NEED_MORE_EVENTS = 1;
             return;
         }
+
+        if (!current_event)
+        {
+            log("NULL EVENT");
+            running = 0;
+            return;
+        }
+        
 
         switch (current_event->id)
         {
@@ -339,6 +263,8 @@ public:
             std::cout << "[TXT] " << txt << "\n";
             textbox.addMessage(
                 std::string(txt));
+            textbox.update_position(width, height);
+                
         }
         break;
 
@@ -361,6 +287,7 @@ public:
                         executed++;
                 }
                 IN_ROW = false;
+                //NEED_MORE_EVENTS=1;
                 // nextEvent(); handleEvent();
             }
         }
@@ -370,6 +297,7 @@ public:
         {
             earg *a = &apool[current_event->args_offset];
             const char *bgname = get_from_spool(a->value);
+            log("BG " + std::string(bgname));
             bg.load_texture(renderer, bgname);
             bg.set_texture_change_speed((float)get_value("VAR_BG_CHANGE_SPEED"));
             bg.set_rect(0, 0, width, height);
@@ -412,6 +340,7 @@ public:
 
         case 7: // CHSPR who sprite
         {
+            if (sprites.size() > 0){
             earg *a = &apool[current_event->args_offset];
             uint32_t index;
             if (a->type == ARG_STRING)
@@ -429,16 +358,19 @@ public:
             sprites[index].set_texture_change_speed(1);
             sprites[index].start_transition(sprites[index].get_last());
         }
+        }
         break;
 
         case 8: // RET code
         {
             int code = apool[current_event->args_offset].value;
             const char *val = get_from_spool(code);
+            log("RET " + std::string(val));
             if (strcmp(val, "finale") == 0)
             {
                 running = false;
                 exit(0);
+                return;
             }
             change_scene(val);
             NEED_MORE_EVENTS = 1;
@@ -473,6 +405,7 @@ public:
 
         case 10: // MV x y t
         {
+            if(sprites.size() > 0){
             int id = apool[current_event->args_offset].value;
             int x = apool[current_event->args_offset + 1].value;
             int y = apool[current_event->args_offset + 2].value;
@@ -480,6 +413,7 @@ public:
             std::cout << "[MV] x=" << x << " y=" << y << " t=" << t << "\n";
             // t это время за которое надо переместить - todo
             sprites[id].move(x, y);
+            }
         }
         break;
 
@@ -654,47 +588,19 @@ public:
         case 20: // LUA
         {
             std::string code = std::string(get_from_spool(apool[current_event->args_offset].value));
+            std::string src;
 
-            std::string src = (code[0] == '=')
-                                  ? "__ret=(function() return " + code.substr(1) + " end)()"
-                                  : code;
-
-            // создаём корутину и защищаем от GC
-            lua_State *co = lua_newthread(L);
-            lua_pushthread(co);
-            lua_xmove(co, L, 1);
-            int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
-            sync_vars_to_lua(co);
-
-            if (luaL_loadstring(co, src.c_str()) != LUA_OK)
-            {
-                printf("[LUA ERROR] %s\n", lua_tostring(co, -1));
-                luaL_unref(L, LUA_REGISTRYINDEX, ref);
-                break;
+            if (code[0] == '='){
+                src = "__ret=(function() return " + code.substr(1) + " end)()";
             }
+            else{
+                src = code;
+            }
+            log("LUA");
+            log(src);
 
-            int nres = 0;
-            int status = lua_resume(co, L, 0, &nres);
-
-            if (status == LUA_YIELD)
-            {
-                // корутина ждёт — добавляем в активные
-                float t = (nres > 0 && lua_isnumber(co, -1)) ? (float)lua_tonumber(co, -1) : 0.0f;
-                lua_pop(co, nres);
-                lua_active_coroutines.push_back({co, t, ref});
-            }
-            else if (status == LUA_OK)
-            {
-                // завершилась сразу — синхронизируем и чистим
-                sync_vars_from_lua(co);
-                luaL_unref(L, LUA_REGISTRYINDEX, ref);
-            }
-            else
-            {
-                printf("[LUA ERROR] %s\n", lua_tostring(co, -1));
-                luaL_unref(L, LUA_REGISTRYINDEX, ref);
-            }
+            lua_runtime.run_string(src);
+        
         }
         break;
         case 21:
@@ -743,22 +649,13 @@ public:
                 auto it = ccnvl_resources.find(hash);
                 if (it != ccnvl_resources.end()) {
                     auto &res = it->second;
-                    if (luaL_loadbuffer(L, (const char*)(ccnvl_data + res.offset), res.size, file) == LUA_OK) {
-                    if (lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK){
-                        lua_pop(L, 1);
-                    }
-                }
+                    lua_runtime.lua_load_buffer((const char*)(ccnvl_data + res.offset), res.size, file);
             }
             }
             else{
 
             std::cout << "[LUA_IMPORT] " << file << "\n";
-
-            if (luaL_dofile(L, file) != LUA_OK)
-            {
-                printf("[LUA_IMPORT ERROR] %s\n", lua_tostring(L, -1));
-                lua_pop(L, 1);
-            }
+            lua_runtime.lua_import_file(file);
             }
         }
         break;
@@ -813,8 +710,6 @@ public:
         }
         break;
         }
-        if (isnext_needed)
-            nextEvent();
     }
 
     void handleMouseEvent(const SDL_Event &e)
@@ -832,6 +727,7 @@ public:
                     std::string l = *(textbox.get_last());
                     if (!l.empty()) l.erase(0, textbox.input_header_size);
                     variables["__input"] =  make_var(l);
+                    lua_runtime.everybody_inputed();
                     textbox.IS_INPUT = 0;
             }
             px = e.button.x;
@@ -840,9 +736,13 @@ public:
             if (e.button.button == SDL_BUTTON_LEFT)
             {
                 if (!textbox.is_last_completed())
+                {
                     textbox.done_messages();
+                    //if (textbox.is_last_completed() && !WAITING)
+                    //    handleEvent();
+                }
                 else if (!WAITING)
-                    handleEvent();
+                    NEED_MORE_EVENTS=1;
             }
             else if (e.button.button == SDL_BUTTON_RIGHT)
             {
@@ -852,28 +752,16 @@ public:
 
     void run(abool &run)
     {
-        int i = 0;
-        do
-        {
-            std::cout << get_from_spool(i) << strlen(get_from_spool(i)) << "\n";
-            while (*get_from_spool(i) != ENDSTR)
-                i += 1;
-            i += 1;
-
-        } while (i < spos);
-        i = 0;
-        do
-        {
-            std::cout << i << int(get_from_epool(i)->id) << "\n";
-            i += 1;
-
-        } while (i < event_pool_position);
         last_time = SDL_GetTicks();
         list_scenes(scenes);
-
         nextEvent();
+
         handleEvent();
+
+
+
         textbox.update_position(width, height);
+
         while (run && running)
         {
 
@@ -882,6 +770,7 @@ public:
             {
                 if (e.type == SDL_QUIT)
                 {
+                    set_value("__running__", 0);
                     exit(0);
                 }
                 handleMouseEvent(e);
@@ -893,7 +782,9 @@ public:
                         std::string l = *(textbox.get_last());
                         if (!l.empty()) l.erase(0, textbox.input_header_size);
                         variables["__input"] =  make_var(l);
+                        lua_runtime.everybody_inputed();
                         textbox.IS_INPUT = 0;
+                        
                         NEED_MORE_EVENTS=1;
                     }
                     if ((e.key.keysym.sym == SDLK_BACKSPACE) && textbox.IS_INPUT){
@@ -935,17 +826,21 @@ public:
             if (NEED_MORE_EVENTS)
             {
                 NEED_MORE_EVENTS = 0;
+                nextEvent();
                 handleEvent();
             }
             update_and_render();
         }
+
+
+        return;
     }
     void update_and_render()
     {
         uint32_t current_time = SDL_GetTicks();
         float delta_time = (current_time - last_time) / 1000.0f;
         last_time = current_time;
-        handle_lua_coroutines(delta_time);
+        lua_runtime.handle_lua_coroutines(delta_time);
         textbox.is_hovered(px, py);
 
         if (WAITING)
@@ -956,7 +851,7 @@ public:
                 WAITING = false;
                 if (!IN_ROW)
                 {
-                    nextEvent();
+                    //nextEvent();
                     NEED_MORE_EVENTS = true;
                 }
             }
@@ -967,16 +862,20 @@ public:
 
         SDL_RenderClear(renderer);
         bg.draw(renderer);
+        if (sprites.size()>0){
         for_each(sprites.begin(), sprites.end(), [this, delta_time](Sprite &sprite)
                  { sprite.update(delta_time); sprite.draw(renderer); });
+        }
         textbox.draw(renderer);
         SDL_RenderPresent(renderer);
     }
 
     void clean()
     {
-        if (ccnvl_file)
+        if (ccnvl_file){
             fclose(ccnvl_file);
+            free(ccnvl_data);
+        }
         Mix_CloseAudio();
         TTF_Quit();
         IMG_Quit();
@@ -985,7 +884,6 @@ public:
             SDL_DestroyRenderer(renderer);
         if (window)
             SDL_DestroyWindow(window);
-
         SDL_Quit();
     }
 

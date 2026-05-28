@@ -62,5 +62,9 @@ int main(int argc, char *argv[])
 
     scr.clean();
 
+    log("exiting");
+
+    exit(0);
+
     return 0;
 }

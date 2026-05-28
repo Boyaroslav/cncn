@@ -36,7 +36,9 @@ int add_string(const char* s) {
 }
 
 const char* get_from_spool(int index) {
-    if (index < 0 || index >= spos) return nullptr;
+    if (index < 0 || index >= spos){
+        log("get_from_spool nullptr");
+        return nullptr;}
     return &spool[index];
 }
 
@@ -53,7 +55,10 @@ void add_to_epool(Event s) {
 }
 
 Event* get_from_epool(int index) {
-    if (index < 0 || index >= epos) return nullptr;
+    if (index < 0 || index >= epos){
+        log("get_from_epool nullptr");
+        return nullptr;
+    }
     return &epool[index];
 }
 
@@ -70,7 +75,10 @@ void add_argument(earg s) {
 }
 
 earg* get_from_apool(int index) {
-    if (index < 0 || index >= apos) return nullptr;
+    if (index < 0 || index >= apos){
+        log("get_from_apool nullptr");
+        return nullptr;
+    }
     return &apool[index];
 }
 

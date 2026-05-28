@@ -31,14 +31,34 @@ public:
 
     bool load()
     {
-        font = TTF_OpenFont(FONT, size);
-        if (font == nullptr){
-            log("ERROR BAD FONT: " + std::string(FONT));
-            font = TTF_OpenFont(DEFAULT_FONT, size);
-        }
-        TTF_SetFontOutline(font, 1);
+        const char* fonts_to_try[] = {
+            FONT,
+            DEFAULT_FONT,
 
-        return font != nullptr;
+            "/usr/share/fonts/dejavu/DejaVuSansMono.ttf",
+
+            "C:/Windows/Fonts/arial.ttf",
+
+            "/System/Library/Fonts/Supplemental/Arial.ttf"
+        };
+        for (const char* path : fonts_to_try)
+        {
+            if (!path) continue;
+
+            font = TTF_OpenFont(path, size);
+
+            if (font)
+            {
+                log("Loaded font: " + std::string(path));
+                TTF_SetFontOutline(font, 1);
+                return true;
+            }
+        }
+
+        log(std::string("ERROR: Could not load any font. SDL_ttf: ")
+            + TTF_GetError());
+
+        return false;
     }
 
     void setSize(int n){

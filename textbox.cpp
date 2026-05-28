@@ -167,9 +167,10 @@ void TextBox::handle_mouse_wheel(SDL_Event e){
 
 void TextBox::addMessage(std::string text)
 {
+    //log("I have new message! " + text);
     if (messages.size())
         done_messages();
-    messages.emplace_back(interpolate(text), 1.0 * (variables["LETTER_SPEED"]).as_int() / 1000.0, std::chrono::steady_clock::now(), 0);
+    messages.emplace_back(interpolate(text), 1.0 * (variables["LETTER_SPEED"]).as_float(), std::chrono::steady_clock::now(), 0);
 }
 
 void TextBox::cl()
@@ -206,5 +207,7 @@ void TextBox::update_position(int w, int h)
     border.w = w - TEXT_BOX_HORIZONTAL_PADDING * 2;
     border.h = h / 3;
     border.y = h - border.h - TEXT_BOX_VERTICAL_PADDING;
+
     max_lines = border.h / line_height;
+
 }

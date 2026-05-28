@@ -26,6 +26,7 @@
 #include <chrono>
 #include <SDL.h>
 #include <SDL_image.h>
+#include <functional>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include "lua.hpp"
@@ -44,7 +45,7 @@ const int DEFAULT_FONT_SIZE = 28;
 const int TEXT_BOX_HORIZONTAL_PADDING = 100;
 const int TEXT_BOX_VERTICAL_PADDING = 20;
 
-float LETTER_SPEED = 0.07;
+double LETTER_SPEED = 0.07;
 
 #ifdef FORCE_CHARS_SHOWN_FLUENCY
 float MAX_CHARS_SPEED = 1;
