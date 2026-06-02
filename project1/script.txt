@@ -12,9 +12,10 @@ TXT "gavnoooo"
 
 TXT "penis"
 
-LUA "infinite_calc()"
+SET "hui" "penis"
 
-TXT "i sosu cock"
+
+TXT "i ${hui} sosu cock {{govno hui | hello()}}"
 
 
 

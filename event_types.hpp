@@ -72,6 +72,8 @@ const event_type event_types[]= {
     {36, 4, "TBRECT"}, // set new rect of text box (-1, -1, -1, -1) sets the rect to original
     {37, 1, "TBFILL"}, // set new color of text box (hex, with opacity)
     {38, 1, "HIDE"}, // hide sprite {id}
+    {39, 1, "WAITV"}, // не пускать дальше код пока переменная var не равна 1 (в сценах где выбор обязательный и тд)
+    {40, 3, "SETACTIVE"}, // start index end index function name(lua)
 
 
     

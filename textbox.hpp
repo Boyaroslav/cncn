@@ -22,13 +22,30 @@ Font main_font;
 
 // TODO - добавить id к сообщениям чтобы lua и тд могли изменять смску по id а не только последнее
 
+struct active_words{
+    uint32_t start;
+    uint32_t end;
+    std::string lua_action;
+};
+
+// я тут подумал, active words должны быть только у поседней смски, то есть меньше считать и все такое(не забудь удалять)
+
 struct message{
     //uint8_t id=-1;
     std::string text;
     float speed; // frames per second
     std::chrono::steady_clock::time_point start_time;
+    std::vector<active_words> aw;
     float chars_shown = 0.0f;
     bool is_complete = false;
+
+    message(std::string text,
+            float speed,
+            std::chrono::steady_clock::time_point start_time,
+            std::vector<active_words> aw,
+            float chars_shown = 0.0f,
+            bool is_complte=false): 
+            text(text), start_time(start_time), aw(aw), chars_shown(chars_shown), is_complete(is_complete) {}
 };
 
 class TextBox{
@@ -44,7 +61,6 @@ class TextBox{
         std::chrono::steady_clock::time_point last_update;
     public:
         TextBox(){IS_INPUT=0; input_header_size=0; IS_HOVERED=0; Outline_color =  to_sdlc(TEXTBOX_OUTLINE_COLOR);}
-
         void addMessage(std::string);
         void cl();
         void cllast();
@@ -54,11 +70,13 @@ class TextBox{
         void done_messages();
         std::string* get_last();
         void refresh_last();
+        std::pair<std::vector<active_words>, std::string> parse_active_words(std::string text);
         void handle_mouse_wheel(SDL_Event e);
         void is_hovered(int px, int py); // hover - парить, зависать - типо мышка наведена ли
         bool is_last_completed();
         void update_position(int, int);
         bool IS_INPUT;
         bool IS_HOVERED;
+        bool WAS_ACTION = false; // если на слово нажали чтоб не жмалось NEED_MORE_EVENTS
         int input_header_size;
 };

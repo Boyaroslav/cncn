@@ -168,9 +168,12 @@ void TextBox::handle_mouse_wheel(SDL_Event e){
 void TextBox::addMessage(std::string text)
 {
     //log("I have new message! " + text);
+    text = interpolate(text);
     if (messages.size())
         done_messages();
-    messages.emplace_back(interpolate(text), 1.0 * (variables["LETTER_SPEED"]).as_float(), std::chrono::steady_clock::now(), 0);
+    auto [aw, t] = TextBox::parse_active_words(text);
+    log(t);
+    messages.emplace_back(t, 1.0 * (variables["LETTER_SPEED"]).as_float(), std::chrono::steady_clock::now(), aw, 0);
 }
 
 void TextBox::cl()
@@ -210,4 +213,25 @@ void TextBox::update_position(int w, int h)
 
     max_lines = border.h / line_height;
 
+}
+
+
+std::pair<std::vector<active_words>, std::string> TextBox::parse_active_words(std::string text) {
+    std::vector<active_words> aw;
+    size_t last_one = 0;
+    size_t i = text.find("{{", last_one);
+    while (i != std::string::npos) {
+        size_t sep    = text.find("|",  i);
+        size_t ending = text.find("}}", i);
+        if (sep == std::string::npos || ending == std::string::npos || sep > ending)
+            break;
+        std::string word = text.substr(i + 2, sep - (i + 2));
+        std::string func = text.substr(sep + 1, ending - (sep + 1));
+        aw.emplace_back(i, i + word.size(), func);
+        text = text.replace(i, ending + 2 - i, word);
+        last_one = i + word.size();
+        i = text.find("{{", last_one);
+    }
+
+    return {aw, text};
 }
