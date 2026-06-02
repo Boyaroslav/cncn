@@ -99,6 +99,7 @@ Var get_value(const std::string &t)
 
 void vars_init()
 {
+    log("vars_init");
     set_value("VAR_BG_CHANGE_SPEED", 2.0);
     set_value("__running__", (uint32_t)1);
     set_value("LETTER_SPEED", LETTER_SPEED);

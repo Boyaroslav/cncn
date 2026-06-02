@@ -19,6 +19,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <memory>
 #include <atomic>
 #include <variant>
 #include <unordered_map>
@@ -33,7 +34,7 @@
 
 #include "settings.cpp"
 
-#define FORCE_CHARS_SHOWN_FLUENCY 1
+#define FORCE_CHARS_SHOWN_FLUENCY 0
 
 const int STRING_POOL_SIZE = 65536;
 const int EVENT_POOL_SIZE = 1024;
@@ -45,12 +46,15 @@ const int DEFAULT_FONT_SIZE = 28;
 const int TEXT_BOX_HORIZONTAL_PADDING = 100;
 const int TEXT_BOX_VERTICAL_PADDING = 20;
 
-double LETTER_SPEED = 0.07;
+float LETTER_SPEED = 0.07;
+
+int text_box_scroll_step = 30;
 
 #ifdef FORCE_CHARS_SHOWN_FLUENCY
 float MAX_CHARS_SPEED = 1;
 #endif
 
+std::string LUA_ACTION_FROM_TEXTBOX = "";
 
 bool IS_CCNVL = false; // если .bin то все как раньше. а если .ccnvl то будем по другому брать фотки, другие файлы там и тд
 
@@ -215,4 +219,24 @@ bool has_extension(const char *name, const char *ext)
     if (!dot)
         return false;
     return strcmp(dot, ext) == 0;
+}
+
+// from textbox.hpp
+struct active_words{
+    uint32_t start;
+    uint32_t end;
+    std::string lua_action;
+};
+
+struct ActiveWord{
+    active_words aw;
+    std::string text;
+};
+
+#define text_line std::variant<std::string, ActiveWord>
+
+
+long long int max(long long int x, long long int y){
+    if (x >= y) return x;
+    return y;
 }

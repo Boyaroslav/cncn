@@ -22,11 +22,7 @@ Font main_font;
 
 // TODO - добавить id к сообщениям чтобы lua и тд могли изменять смску по id а не только последнее
 
-struct active_words{
-    uint32_t start;
-    uint32_t end;
-    std::string lua_action;
-};
+
 
 // я тут подумал, active words должны быть только у поседней смски, то есть меньше считать и все такое(не забудь удалять)
 
@@ -44,8 +40,14 @@ struct message{
             std::chrono::steady_clock::time_point start_time,
             std::vector<active_words> aw,
             float chars_shown = 0.0f,
-            bool is_complte=false): 
-            text(text), start_time(start_time), aw(aw), chars_shown(chars_shown), is_complete(is_complete) {}
+            bool is_complete=false): 
+            text(text), speed(speed), start_time(start_time), aw(aw), chars_shown(chars_shown), is_complete(is_complete) {}
+};
+
+struct rendered_aw{
+    SDL_Rect r;
+    std::string laction;
+
 };
 
 class TextBox{
@@ -55,12 +57,17 @@ class TextBox{
         std::string footer;
         int line_height = 1;
         SDL_Rect border;
+        float scroll_y = 0.0f;
+        float target_scroll_y = 0.0f;
+
         int max_lines = 4;
         SDL_Color box_color = to_sdlc(DEFAULT_BOX_COLOR);
         std::vector<message>messages; // [text angry slow] \n [text normal quick and so on]
+        std::vector<rendered_aw>r_aws;
         std::chrono::steady_clock::time_point last_update;
     public:
-        TextBox(){IS_INPUT=0; input_header_size=0; IS_HOVERED=0; Outline_color =  to_sdlc(TEXTBOX_OUTLINE_COLOR);}
+        TextBox(){log("TextBox created"); IS_INPUT=0; input_header_size=0; IS_HOVERED=0; Outline_color =  to_sdlc(TEXTBOX_OUTLINE_COLOR);}
+        ~TextBox(){r_aws.clear(); messages.clear();}
         void addMessage(std::string);
         void cl();
         void cllast();
@@ -77,6 +84,8 @@ class TextBox{
         void update_position(int, int);
         bool IS_INPUT;
         bool IS_HOVERED;
+        void check_cursor(int, int);
+        void check_press(int, int);
         bool WAS_ACTION = false; // если на слово нажали чтоб не жмалось NEED_MORE_EVENTS
         int input_header_size;
 };

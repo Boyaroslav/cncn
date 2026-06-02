@@ -1,3 +1,21 @@
+/*
+ * This file is part of CnCn (mynovel).
+ * Copyright (C) 2026 Iaroslav Bobylev
+ * CnCn (mynovel) is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * CnCn (mynovel) is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with CnCn (mynovel). If not, see <https://www.gnu.org/licenses/>.
+ */
+
+
+
 #include "utils.hpp"
 
 #include "vars.hpp"
@@ -7,6 +25,7 @@
 #define LUA_COMMAND_CLEAR_ONE_MESSAGE "cllast"
 #define LUA_COMMAND_INPUT "input"
 #define LUA_COMMAND_LOG "log"
+#define LUA_COMMAND_CHANGE_SCENE "change_scene"
 
 struct LuaCoroutine
 {
@@ -102,6 +121,20 @@ class LuaRuntime{
         }, 1);
 
         lua_setglobal(L, "sync");
+
+        lua_pushlightuserdata(L, this);
+
+        lua_pushcclosure(L, [](lua_State *L) -> int {
+            auto *self = (LuaRuntime*)lua_touserdata(L, lua_upvalueindex(1));
+            const char *text = luaL_checkstring(L, 1);
+
+            if (self->CHSC)
+                self->CHSC(text);
+
+            return 0;
+        }, 1);
+
+        lua_setglobal(L, LUA_COMMAND_CHANGE_SCENE);
     }
     void shotdown(){
 
@@ -110,6 +143,7 @@ class LuaRuntime{
 
     std::function<void(const std::string&)> TXT;
     std::function<void(const std::string&)> INPUT;
+    std::function<void(const std::string&)> CHSC;
     std::function<void()> CLEAR;
     std::function<void()> SYNC;
     std::function<void()> CLEAR_LAST;

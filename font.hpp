@@ -120,6 +120,7 @@ public:
 }
 
 
+
     SDL_Point measure(const std::string& text) const
     {
         SDL_Point p{0,0};
@@ -147,4 +148,80 @@ public:
         border_color = to_sdlc(c);
     }
 
+    SDL_Texture* renderOutlinedUnderlineBold(SDL_Renderer* rend, const std::string& text, Color main, Color outline, int outlineSize = 2)
+    {
+        if (!font) return nullptr;
+
+        // Включаем стиль
+        TTF_SetFontStyle(font, TTF_STYLE_UNDERLINE | TTF_STYLE_BOLD);
+
+        SDL_Color mainColor    = to_sdlc(main);
+        SDL_Color outlineColor = to_sdlc(outline);
+
+        TTF_SetFontOutline(font, 0);
+        SDL_Surface* surfMain = TTF_RenderUTF8_Blended(font, text.c_str(), mainColor);
+        SDL_SetSurfaceBlendMode(surfMain, SDL_BLENDMODE_BLEND);
+
+        TTF_SetFontOutline(font, outlineSize);
+        SDL_Surface* surfOutline = TTF_RenderUTF8_Blended(font, text.c_str(), outlineColor);
+
+        // Сбрасываем стиль ДО любого return — иначе шрифт останется жирным
+        TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
+
+        if (!surfOutline) return nullptr;
+        SDL_SetSurfaceBlendMode(surfOutline, SDL_BLENDMODE_BLEND);
+
+        if (!surfMain) {
+            SDL_FreeSurface(surfOutline);
+            return nullptr;
+        }
+
+        SDL_Rect dst;
+        dst.x = (surfOutline->w - surfMain->w) / 2;
+        dst.y = (surfOutline->h - surfMain->h) / 2;
+        dst.w = surfMain->w;
+        dst.h = surfMain->h;
+
+        SDL_BlitSurface(surfMain, nullptr, surfOutline, &dst);
+        SDL_FreeSurface(surfMain);
+
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(rend, surfOutline);
+        SDL_FreeSurface(surfOutline);
+
+        return tex;
+    }
+
+    SDL_Point measure(const std::vector<text_line>& line) {
+        int total_w = 0;
+        int max_h = 0;
+
+        for (const auto& segment : line) {
+            std::string text;
+
+            // Извлекаем текст из варианта
+            if (std::holds_alternative<std::string>(segment)) {
+                text = std::get<std::string>(segment);
+            } else {
+                text = std::get<ActiveWord>(segment).text;
+            }
+
+            if (text.empty()) continue;
+
+            SDL_Point sz = measure(text); // уже существующий measure(string)
+            total_w += sz.x;
+            if (sz.y > max_h) max_h = sz.y;
+        }
+
+        return {total_w, max_h};
+    }
+
+    SDL_Point measure(const std::vector<text_line>& line, const std::string& extra) {
+        SDL_Point base = measure(line);
+        SDL_Point ext  = measure(extra);
+        return {base.x + ext.x, std::max(base.y, ext.y)};
+    }
+
 };
+
+
+

@@ -15,11 +15,24 @@ TXT "penis"
 SET "hui" "penis"
 
 
+
 TXT "i ${hui} sosu cock {{govno hui | hello()}}"
-
-
 
 TXT "fnish"
 
 RET "finale"
+END
+
+
+
+SCRIPT main2
+
+ROW 2
+
+BG "b2.png"
+TXT "main2!!!"
+TXT "bye"
+RET "finale"
+
+
 END

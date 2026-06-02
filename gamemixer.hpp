@@ -27,8 +27,8 @@ private:
     int sfx_fade_in = 0;
     int sfx_fade_out = 0;
 
-    int bgm_volume = MIX_MAX_VOLUME; // max - 128
-    int sfx_volume = MIX_MAX_VOLUME; // same
+    int bgm_volume = 0;//MIX_MAX_VOLUME; // max - 128
+    int sfx_volume = 0;//MIX_MAX_VOLUME; // same
 
     std::unordered_map<uint32_t, Mix_Chunk *> chunks; // кэш чанков
     std::unordered_map<uint32_t, int> channel;        // что играет (хэш) - на каком канале

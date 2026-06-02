@@ -35,7 +35,7 @@ private:
     int px, py;
     int event_pool_position = 0;
     uint32_t last_time;
-    TextBox textbox;
+    std::unique_ptr<TextBox> textbox;
     bool if_result = 1;
     Audio audio;
 
@@ -123,44 +123,49 @@ public:
             log("SDL_CreateRenderer error");
             return false;
         }
+        vars_init();
 
         main_font = Font();
         main_font.load();
 
-        vars_init();
-
-        log("LETTER_SPEED" + std::to_string((double)get_value("LETTER_SPEED")));
-
         lua_runtime = LuaRuntime();
         lua_runtime.init();
 
+        textbox = std::make_unique<TextBox>();
+
         SDL_SetWindowTitle(window, (const char *)get_value("WINDOW_TITLE"));
 
-        textbox = TextBox();
+        
 
         lua_runtime.TXT = [this](const std::string& text)
         {
-            textbox.addMessage(text);
-            textbox.update_position(width, height);
+            textbox->addMessage(text);
+            textbox->update_position(width, height);
         };
 
         lua_runtime.CLEAR = [this]()
         {
-            textbox.cl();
+            textbox->cl();
         };
 
         lua_runtime.CLEAR_LAST = [this]()
         {
-            textbox.cllast();
+            textbox->cllast();
         };
 
         lua_runtime.INPUT = [this](const std::string& text)
         {
             SDL_StartTextInput();
-            textbox.IS_INPUT = true;
+            textbox->IS_INPUT = true;
 
-            textbox.addMessage(text);
-            textbox.input_header_size = textbox.get_last()->size();
+            textbox->addMessage(text);
+            textbox->input_header_size = textbox->get_last()->size();
+        };
+
+        lua_runtime.CHSC = [this](const std::string& text)
+        {
+            change_scene(text.c_str());
+            NEED_MORE_EVENTS = 1;
         };
 
         return true;
@@ -261,9 +266,9 @@ public:
             earg *a = &apool[current_event->args_offset];
             const char *txt = get_from_spool(a->value);
             std::cout << "[TXT] " << txt << "\n";
-            textbox.addMessage(
+            textbox->addMessage(
                 std::string(txt));
-            textbox.update_position(width, height);
+            textbox->update_position(width, height);
                 
         }
         break;
@@ -419,7 +424,7 @@ public:
 
         case 11: // CLTB
         {
-            textbox.cl();
+            textbox->cl();
         }
         break;
 
@@ -514,7 +519,7 @@ public:
         case 16: // TBCAP - change footer
         {
             std::string t = get_from_spool(apool[current_event->args_offset].value);
-            textbox.set_footer(t);
+            textbox->set_footer(t);
         }
         break;
         case 17: // WAIT
@@ -596,8 +601,6 @@ public:
             else{
                 src = code;
             }
-            log("LUA");
-            log(src);
 
             lua_runtime.run_string(src);
         
@@ -696,9 +699,9 @@ public:
         case 35: // INPUT
         {
             SDL_StartTextInput();
-            textbox.IS_INPUT=1;
-            textbox.addMessage(interpolate(get_from_spool(apool[current_event->args_offset].value)));
-            textbox.input_header_size = textbox.get_last()->size();
+            textbox->IS_INPUT=1;
+            textbox->addMessage(interpolate(get_from_spool(apool[current_event->args_offset].value)));
+            textbox->input_header_size = textbox->get_last()->size();
         }
         break;
         case 36: // TBRECT
@@ -722,27 +725,29 @@ public:
 
         if (e.type == SDL_MOUSEBUTTONUP)
         {
-            if (textbox.IS_INPUT){
+            if (textbox->IS_INPUT){
                     SDL_StopTextInput();
-                    std::string l = *(textbox.get_last());
-                    if (!l.empty()) l.erase(0, textbox.input_header_size);
+                    std::string l = *(textbox->get_last());
+                    if (!l.empty()) l.erase(0, textbox->input_header_size);
                     variables["__input"] =  make_var(l);
                     lua_runtime.everybody_inputed();
-                    textbox.IS_INPUT = 0;
+                    textbox->IS_INPUT = 0;
             }
             px = e.button.x;
             py = e.button.y;
 
             if (e.button.button == SDL_BUTTON_LEFT)
             {
-                if (!textbox.is_last_completed())
+                textbox->check_press(px, py);
+                if (!textbox->is_last_completed())
                 {
-                    textbox.done_messages();
-                    //if (textbox.is_last_completed() && !WAITING)
+                    textbox->done_messages();
+                    //if (textbox->is_last_completed() && !WAITING)
                     //    handleEvent();
                 }
-                else if (!WAITING)
+                else if (!WAITING && !textbox->WAS_ACTION)
                     NEED_MORE_EVENTS=1;
+
             }
             else if (e.button.button == SDL_BUTTON_RIGHT)
             {
@@ -753,14 +758,11 @@ public:
     void run(abool &run)
     {
         last_time = SDL_GetTicks();
-        list_scenes(scenes);
-        nextEvent();
+        textbox->update_position(width, height);
+        //nextEvent();
 
-        handleEvent();
+        //handleEvent();
 
-
-
-        textbox.update_position(width, height);
 
         while (run && running)
         {
@@ -777,19 +779,19 @@ public:
                 if (e.type == SDL_KEYDOWN)
                 {
                     SDL_Keymod mod = SDL_GetModState();
-                    if ((e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_KP_ENTER) && textbox.IS_INPUT){
+                    if ((e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_KP_ENTER) && textbox->IS_INPUT){
                         SDL_StopTextInput();
-                        std::string l = *(textbox.get_last());
-                        if (!l.empty()) l.erase(0, textbox.input_header_size);
+                        std::string l = *(textbox->get_last());
+                        if (!l.empty()) l.erase(0, textbox->input_header_size);
                         variables["__input"] =  make_var(l);
                         lua_runtime.everybody_inputed();
-                        textbox.IS_INPUT = 0;
+                        textbox->IS_INPUT = 0;
                         
                         NEED_MORE_EVENTS=1;
                     }
-                    if ((e.key.keysym.sym == SDLK_BACKSPACE) && textbox.IS_INPUT){
-                        std::string* last = (textbox.get_last());
-                        if (last != nullptr && !(last->empty()) && (last->size() > textbox.input_header_size)){
+                    if ((e.key.keysym.sym == SDLK_BACKSPACE) && textbox->IS_INPUT){
+                        std::string* last = (textbox->get_last());
+                        if (last != nullptr && !(last->empty()) && (last->size() > textbox->input_header_size)){
                             char lp = last->back();
                             while((lp & 0xC0) == 0x80 && last->size() > 0){
                                 last->pop_back();
@@ -811,17 +813,22 @@ public:
                         }
                     }
                 }
-                else if (e.type == SDL_TEXTINPUT && textbox.IS_INPUT) {
-                    *(textbox.get_last()) += e.text.text;
-                    textbox.refresh_last();
+                else if (e.type == SDL_TEXTINPUT && textbox->IS_INPUT) {
+                    *(textbox->get_last()) += e.text.text;
+                    textbox->refresh_last();
                 }
                 else if (e.type == SDL_MOUSEWHEEL){
-                    textbox.handle_mouse_wheel(e);
+                    textbox->handle_mouse_wheel(e);
                 }
                 else if (e.type == SDL_MOUSEMOTION){
                     px = e.motion.x;
                     py = e.motion.y;
                 }
+            }
+            if(textbox->WAS_ACTION){
+                textbox->WAS_ACTION = 0;
+                lua_runtime.run_string(LUA_ACTION_FROM_TEXTBOX);
+                LUA_ACTION_FROM_TEXTBOX.clear();
             }
             if (NEED_MORE_EVENTS)
             {
@@ -841,7 +848,7 @@ public:
         float delta_time = (current_time - last_time) / 1000.0f;
         last_time = current_time;
         lua_runtime.handle_lua_coroutines(delta_time);
-        textbox.is_hovered(px, py);
+        textbox->is_hovered(px, py);
 
         if (WAITING)
         {
@@ -857,16 +864,16 @@ public:
             }
         }
 
-        textbox.update(delta_time);
+        textbox->update(delta_time);
         bg.update(delta_time);
 
         SDL_RenderClear(renderer);
         bg.draw(renderer);
         if (sprites.size()>0){
-        for_each(sprites.begin(), sprites.end(), [this, delta_time](Sprite &sprite)
+        std::for_each(sprites.begin(), sprites.end(), [this, delta_time](Sprite &sprite)
                  { sprite.update(delta_time); sprite.draw(renderer); });
         }
-        textbox.draw(renderer);
+        textbox->draw(renderer);
         SDL_RenderPresent(renderer);
     }
 

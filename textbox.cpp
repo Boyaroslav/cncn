@@ -17,14 +17,27 @@
 #include "textbox.hpp"
 #include "vars.hpp"
 
+int check_aw(uint32_t i, message m){ // active - length; no - -1
+    for (auto aw: m.aw){
+        if (i >= aw.start && i <= aw.end){
+            return aw.end - i;
+        }
+    }
+    return -1;
+} // я это буду использовать чтобы проверять слово на активность
+
+
+
 void TextBox::draw(SDL_Renderer *rend)
 {
+    SDL_RenderSetClipRect(rend, &border);
     SDL_SetRenderDrawColor(rend, box_color.r, box_color.g, box_color.b, box_color.a);
     SDL_RenderFillRect(rend, &border);
 
     int padding = 20;
+    r_aws.clear();
     int max_width = border.w - padding * 2;
-    std::vector<std::string> lines;
+    std::vector<std::vector<text_line>> lines;
 
     for (auto &msg : messages)
     {
@@ -32,7 +45,7 @@ void TextBox::draw(SDL_Renderer *rend)
         if (visible_text.empty())
             continue;
 
-        std::string current_line = "";
+        std::vector<text_line> current_line;
         std::string word = "";
 
         size_t total_utf8_len = utf8_len(visible_text);
@@ -42,15 +55,22 @@ void TextBox::draw(SDL_Renderer *rend)
 
             if (c == " ")
             {
-                SDL_Point sz = main_font.measure(current_line + word);
-                if (sz.x > max_width)
+                if (main_font.measure(current_line, word).x > max_width)
                 {
                     lines.push_back(current_line);
-                    current_line = word + " ";
+                    current_line.clear();
                 }
-                else
-                {
-                    current_line += word + " ";
+
+                int aw_idx = check_aw(i - utf8_len(word), msg);
+                if (aw_idx >= 0) {
+                    for (auto &a : msg.aw) {
+                        if ((i - utf8_len(word)) >= a.start && (i - utf8_len(word)) <= a.end) {
+                            current_line.push_back(ActiveWord{a, word + " "});
+                            break;
+                        }
+                    }
+                } else {
+                    current_line.push_back(word + " ");
                 }
                 word = "";
             }
@@ -62,15 +82,15 @@ void TextBox::draw(SDL_Renderer *rend)
 
         if (!word.empty() || !current_line.empty())
         {
-            SDL_Point sz = main_font.measure(current_line + word);
-            if (sz.x > max_width)
+            if (main_font.measure(current_line, word).x > max_width)
             {
                 lines.push_back(current_line);
-                lines.push_back(word);
+                lines.push_back({ word });
             }
             else
             {
-                lines.push_back(current_line + word);
+                current_line.push_back(word);
+                lines.push_back(current_line);
             }
         }
     }
@@ -88,20 +108,52 @@ void TextBox::draw(SDL_Renderer *rend)
     int y = border.y + padding;
     int x = border.x + padding;
 
+    int max_scroll = max(0, ((int)lines.size() * line_height));
+    if (target_scroll_y > max_scroll)
+        target_scroll_y = max_scroll;
+    
+
+
     // рендерим строки
     for (auto &line : lines)
     {
-        SDL_Texture *tex = main_font.renderOutlined(rend, line, DEFAULT_FONT_COLOR, DEFAULT_FONT_BORDER_COLOR);
-        // SDL_Texture* tex = main_font.render(rend, line);
-        if (!tex)
-            continue;
+        int cur_x = x;
+        for (auto &part: line){
+            if (std::holds_alternative<std::string>(part)){
+                const std::string &text = std::get<std::string>(part);
+                if (text.empty()) continue;
 
-        SDL_Point sz = main_font.measure(line);
-        SDL_Rect dst{x, y, sz.x, sz.y};
-        SDL_RenderCopy(rend, tex, nullptr, &dst);
-        SDL_DestroyTexture(tex);
+                SDL_Texture *tex = main_font.renderOutlined(rend, text,
+                    DEFAULT_FONT_COLOR, DEFAULT_FONT_BORDER_COLOR);
+                if (!tex) continue;
 
-        y += line_height;
+                SDL_Point sz = main_font.measure(text);
+                SDL_Rect dst{cur_x, y +(int)target_scroll_y, sz.x, sz.y};
+                SDL_RenderCopy(rend, tex, nullptr, &dst);
+                SDL_DestroyTexture(tex);
+
+                cur_x += sz.x;
+            }
+            else{ // active word
+            const ActiveWord &aw = std::get<ActiveWord>(part);
+            if (aw.text.empty()) continue;
+
+            SDL_Texture *tex = main_font.renderOutlinedUnderlineBold(rend, aw.text,
+                ACTIVE_FONT_COLOR, DEFAULT_ACTIVE_FONT_BORDER_COLOR);
+            if (!tex) continue;
+
+            SDL_Point sz = main_font.measure(aw.text);
+            SDL_Rect dst{cur_x, y + (int)target_scroll_y, sz.x, sz.y};
+            SDL_RenderCopy(rend, tex, nullptr, &dst);
+            SDL_DestroyTexture(tex);
+
+            r_aws.push_back({dst, aw.aw.lua_action});
+
+            cur_x += sz.x;
+
+            }
+    }
+    y += line_height;
     }
     if (IS_HOVERED) {
         
@@ -111,6 +163,7 @@ void TextBox::draw(SDL_Renderer *rend)
         SDL_Rect thick_border = {border.x + 1, border.y + 1, border.w - 2, border.h - 2};
         SDL_RenderDrawRect(rend, &thick_border);
     }
+    SDL_RenderSetClipRect(rend, nullptr);
 }
 
 void TextBox::set_footer(std::string t)
@@ -148,6 +201,7 @@ void TextBox::update(float delta_time)
             current_msg.chars_shown = (float)total_chars;
             current_msg.is_complete = true;
         }
+
     }
 }
 
@@ -162,18 +216,28 @@ void TextBox::handle_mouse_wheel(SDL_Event e){
     int start_x = e.wheel.x;
     int start_y = e.wheel.y;
 
+    target_scroll_y += -start_y * text_box_scroll_step;
+
+    if (target_scroll_y < -30)
+        target_scroll_y = -30;
+
+
+    std::cout<<"HUII "<<target_scroll_y<<"\n";
+
 
 }
 
 void TextBox::addMessage(std::string text)
 {
+    target_scroll_y = 0;
     //log("I have new message! " + text);
     text = interpolate(text);
     if (messages.size())
         done_messages();
     auto [aw, t] = TextBox::parse_active_words(text);
-    log(t);
-    messages.emplace_back(t, 1.0 * (variables["LETTER_SPEED"]).as_float(), std::chrono::steady_clock::now(), aw, 0);
+    messages.emplace_back(t, 1.0 * get_value("LETTER_SPEED").as_float(), std::chrono::steady_clock::now(), aw, 0);
+
+
 }
 
 void TextBox::cl()
@@ -234,4 +298,28 @@ std::pair<std::vector<active_words>, std::string> TextBox::parse_active_words(st
     }
 
     return {aw, text};
+}
+
+
+void TextBox::check_cursor(int px, int py) {
+    for (auto &r : r_aws) {
+        if (px >= r.r.x && px <= r.r.x + r.r.w &&
+            py >= r.r.y && py <= r.r.y + r.r.h)
+        {
+            //SDL_SetCursor(cursor_hand);
+            return;
+        }
+    }
+   // SDL_SetCursor(cursor_default);
+}
+
+
+void TextBox::check_press(int px, int py){
+    SDL_Point p = {px, py};
+    for (auto r : r_aws) {
+        if (SDL_PointInRect(&p, &r.r)) {
+            WAS_ACTION = 1;
+            LUA_ACTION_FROM_TEXTBOX = r.laction;
+        }
+    }
 }
