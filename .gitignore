@@ -19,6 +19,8 @@ lcnovel
 dumper
 CMakeCache.txt
 cmake_install.cmake
+NotoSansMonoCJKsc-Regular.otf
+NotoSans_SemiCondensed-Regular.ttf
 *Makefile*
 a.out
 .DS_Store

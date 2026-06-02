@@ -63,7 +63,7 @@ uint8_t* ccnvl_data  = nullptr;
 uint32_t scene_data_start = 0;
 
 // const char* DEFAULT_FONT = "FreeMono.ttf";
-const char *DEFAULT_FONT = "./NotoSans_SemiCondensed-Regular.ttf";
+const char *DEFAULT_FONT = "./NotoSansMonoCJKsc-Regular.otf";
 
 char FONT[256];
 

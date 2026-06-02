@@ -16,9 +16,6 @@ SET "hui" "penis"
 
 
 
-TXT "i ${hui} sosu cock {{govno hui | hello()}} uhhu {{govno hui | herrr()}}"
-
-TXT "выбирай дружок - {{соснуть хуя | herrr()}} аль {{съесть пирожок | przh()}}"
 
 TXT "fnish"
 
