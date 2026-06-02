@@ -279,7 +279,6 @@ void TextBox::update_position(int w, int h)
 
 }
 
-
 std::pair<std::vector<active_words>, std::string> TextBox::parse_active_words(std::string text) {
     std::vector<active_words> aw;
     size_t last_one = 0;
@@ -291,7 +290,9 @@ std::pair<std::vector<active_words>, std::string> TextBox::parse_active_words(st
             break;
         std::string word = text.substr(i + 2, sep - (i + 2));
         std::string func = text.substr(sep + 1, ending - (sep + 1));
-        aw.emplace_back(i, i + word.size(), func);
+        uint32_t start_char = utf8_len(text.substr(0, i));
+        uint32_t end_char   = start_char + utf8_len(word) - 1;
+        aw.emplace_back(start_char, end_char, func);
         text = text.replace(i, ending + 2 - i, word);
         last_one = i + word.size();
         i = text.find("{{", last_one);

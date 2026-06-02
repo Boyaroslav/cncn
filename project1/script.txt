@@ -16,10 +16,22 @@ SET "hui" "penis"
 
 
 
-TXT "i ${hui} sosu cock {{govno hui | hello()}}"
+TXT "i ${hui} sosu cock {{govno hui | hello()}} uhhu {{govno hui | herrr()}}"
+
+TXT "выбирай дружок - {{соснуть хуя | herrr()}} аль {{съесть пирожок | przh()}}"
 
 TXT "fnish"
 
+RET "finale"
+END
+
+SCRIPT hui
+TXT "HUUIIIIII"
+RET "finale"
+END
+
+SCRIPT przh
+TXT "PIROZHOOOOK"
 RET "finale"
 END
 
