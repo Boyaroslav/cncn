@@ -417,7 +417,7 @@ public:
             int t = apool[current_event->args_offset + 3].value;
             std::cout << "[MV] x=" << x << " y=" << y << " t=" << t << "\n";
             // t это время за которое надо переместить - todo
-            sprites[id].move(x, y);
+            sprites[id].move(x, y, t);
             }
         }
         break;

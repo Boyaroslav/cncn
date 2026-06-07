@@ -14,6 +14,7 @@
   <div id="blockly"></div>
   <div id="code">
     <button id="btnGen">Generate</button>
+    <button id="btnGenSave">Generate and Save as</button>
     <button id="btnClear">Clear</button>
     <button id="saveBtn">Save</button>
   <input type="file" id="loadInput" accept=".json" style="display:none">
@@ -457,6 +458,42 @@ document.addEventListener('keydown', (e) => {
         return `CLTB\n`;
       };
 
+      jsGenerator.forBlock['TBRECT'] = function (block) {
+        let x = jsGenerator.valueToCode(block, "X", jsGenerator.ORDER_ATOMIC) || "-1";
+        let y = jsGenerator.valueToCode(block, "Y", jsGenerator.ORDER_ATOMIC) || "-1";
+        let w = jsGenerator.valueToCode(block, "W", jsGenerator.ORDER_ATOMIC) || "-1";
+        let h = jsGenerator.valueToCode(block, "H", jsGenerator.ORDER_ATOMIC) || "-1";
+        return `TBRECT ${x} ${y} ${w} ${h}\n`;
+      };
+
+      jsGenerator.forBlock['TBFILL'] = function (block) {
+        let color = jsGenerator.valueToCode(block, "COLOR", jsGenerator.ORDER_ATOMIC) || '""';
+        color = cleanValue(color);
+        return `TBFILL "${color}"\n`;
+      };
+
+      jsGenerator.forBlock['HIDE'] = function (block) {
+        let id = jsGenerator.valueToCode(block, "ID", jsGenerator.ORDER_ATOMIC) || "0";
+        id = formatNumber(id);
+        return `HIDE ${id}\n`;
+      };
+
+      jsGenerator.forBlock['WAITV'] = function (block) {
+        let v = jsGenerator.valueToCode(block, "VAR", jsGenerator.ORDER_ATOMIC) || '""';
+        v = cleanValue(v);
+        return `WAITV "${v}"\n`;
+      };
+
+      jsGenerator.forBlock['SETACTIVE'] = function (block) {
+        let start = jsGenerator.valueToCode(block, "START", jsGenerator.ORDER_ATOMIC) || "0";
+        let end   = jsGenerator.valueToCode(block, "END",   jsGenerator.ORDER_ATOMIC) || "0";
+        let func  = jsGenerator.valueToCode(block, "FUNC",  jsGenerator.ORDER_ATOMIC) || '""';
+        func = cleanValue(func);
+        start = formatNumber(start);
+        end   = formatNumber(end);
+        return `SETACTIVE ${start} ${end} "${func}"\n`;
+      };
+
       jsGenerator.forBlock['variables_get'] = function (block){
         let v = MACROS[block.getFieldValue('FIELD_NAME')];
         console.log(v);
@@ -497,6 +534,20 @@ document.addEventListener('keydown', (e) => {
     }
 
     document.getElementById('btnGen').onclick = gen;
+    document.getElementById('btnGenSave').onclick = () => {
+      gen();
+
+      const text = document.getElementById('out').value;
+      if (!text) return;
+
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "script.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
     document.getElementById('btnClear').onclick = () => workspace.clear();
   </script>
 </body>

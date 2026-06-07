@@ -466,6 +466,61 @@ Blockly.Blocks['LUA_IMPORT'] = {
   }
 };
 
+Blockly.Blocks['TBRECT'] = {
+  init: function () {
+    this.appendValueInput("X").appendField("TBRECT x");
+    this.appendValueInput("Y").appendField("y");
+    this.appendValueInput("W").appendField("w");
+    this.appendValueInput("H").appendField("h");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_TEXT);
+    this.setTooltip("Set textbox rect. Use -1,-1,-1,-1 to reset.");
+  }
+};
+
+Blockly.Blocks['TBFILL'] = {
+  init: function () {
+    this.appendValueInput("COLOR").setCheck("String").appendField("TBFILL");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_TEXT);
+    this.setTooltip("Set textbox background color (hex with opacity)");
+  }
+};
+
+Blockly.Blocks['HIDE'] = {
+  init: function () {
+    this.appendValueInput("ID").appendField("HIDE sprite");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_GRAPH);
+    this.setTooltip("Hide sprite by ID");
+  }
+};
+
+Blockly.Blocks['WAITV'] = {
+  init: function () {
+    this.appendValueInput("VAR").setCheck("String").appendField("WAITV");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_ANIM);
+    this.setTooltip("Wait until variable == 1");
+  }
+};
+
+Blockly.Blocks['SETACTIVE'] = {
+  init: function () {
+    this.appendValueInput("START").appendField("SETACTIVE start");
+    this.appendValueInput("END").appendField("end");
+    this.appendValueInput("FUNC").setCheck("String").appendField("func");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_LOGIC);
+    this.setTooltip("Set active range [start..end] with LUA function");
+  }
+};
+
 
 // ----------------------------
 // TOOLBOX (CATEGORIES)
@@ -496,6 +551,9 @@ const COMMANDS_TOOLBOX = {
         { "kind":"block","type":"LUA_IMPORT" },
         { "kind":"block","type":"ROW" },
         { "kind":"sep" },
+        { "kind":"block", "type":"TBRECT"},
+        { "kind":"block", "type":"TBFILL"},
+        
         { "kind":"block","type":"text" }
       ]
     },
@@ -508,6 +566,7 @@ const COMMANDS_TOOLBOX = {
         { "kind":"block","type":"LD" },
         { "kind":"block","type":"LDFILE" },
         { "kind":"block","type":"LID" },
+        { "kind":"block","type":"HIDE"},
         { "kind":"block","type":"LDSIZE" },
         { "kind":"block","type":"LDXYWH" },
         { "kind":"block","type":"CHSPR" }
@@ -522,6 +581,8 @@ const COMMANDS_TOOLBOX = {
         { "kind":"block","type":"IF" },
         { "kind":"block","type":"JMP" },
         { "kind":"block","type":"SET" },
+        { "kind":"block","type":"WAITV"},
+        { "kind":"block","type":"SETACTIVE"},
         { "kind":"block","type":"RET" },
         { "kind":"block","type":"OPERATION" }
       ]

@@ -35,6 +35,14 @@ private:
     float alpha = 1.0f;
     float texture_change_speed = 0.0f;
     float transition_alpha = 1.0f;
+    float move_speed = 0.0f; // in sec
+    float move_transition = 0.0f;
+    float scale_transition = 0.0f;
+    float rotate_transition = 0.0f;
+    int sx; //start x y (before transition started)
+    int sy;
+    int tx; // target x y
+    int ty;
 
     int texture_change_percent = 100;
 
@@ -135,6 +143,12 @@ public:
         return transition_alpha;
     }
     void update(float delta_time) {
+        if (move_transition < 1.0f && move_speed > 0.0f) {
+            move_transition += delta_time / move_speed;
+            if (move_transition >= 1.0f) move_transition = 1.0f;
+            x = sx + (tx - sx) * move_transition;
+            y = sy + (ty - sy) * move_transition;
+        }
         if (future_index == -1 || texture_change_speed <= 0.0f) return;
 
         transition_alpha += (delta_time / texture_change_speed);
@@ -194,9 +208,19 @@ public:
     SDL_Rect get_rect(){
         return rect;
     }
-    void move(int x_, int y_=0){
+    void move(int x_, int y_=0, int t_=0){
+        if (t_ > 0){
+            tx = x_;
+            ty = y_;
+            sx = x;
+            sy = y;
+            move_speed = (t_ * 1.0) / 1000.0;
+            move_transition = 0.0f;
+        }
+        else{
         x += x_;
         y += y_;
+        }
         
     }
 
