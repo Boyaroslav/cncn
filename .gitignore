@@ -12,6 +12,7 @@ _deps
 _deps/*
 include/*
 .DS_Store
+main
 build/
 build_windows/
 build_macos/
