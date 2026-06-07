@@ -69,7 +69,7 @@ END
 
 
 ### Structure of the project
-
+```
 project_folder
     bg1.png
     bg2.png
@@ -86,11 +86,13 @@ project_folder
     sound.ogg
     chunk1/ - loads only when its needed. for large files  !!!ОНИ ПОКА ВСЕ ПО ОДНОМУ ЗАГРУЖАЮТСЯ!!!
         some_huge_file.wav
+```
 
 ## Notes
-
+```
 - Variable names are case-sensitive strings.
 - The special variable `__input` holds the last `INPUT` result.
 - You can get last sprite id by ${LID}
 - `ROW n` groups the following `n` commands to run together — useful for simultaneous animations and audio.
 - Some commands are not listed here. However they have not been implemented yet
+```
