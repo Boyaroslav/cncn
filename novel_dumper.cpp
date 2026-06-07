@@ -45,6 +45,13 @@ bool is_number(const char *s)
     return true;
 }
 
+bool is_float(const std::string& s) {
+    if (s.empty()) return false;
+    char* end;
+    strtof(s.c_str(), &end);
+    return end != s.c_str() && *end == '\0';
+}
+
 int parse_args(char *line, char **argv, int max_args)
 {
     int argc = 0;
@@ -113,6 +120,11 @@ void add_event(uint8_t id, int argc, char **argv)
         {
             apool[apos].type = ARG_INT;
             apool[apos].value = atoi(argv[i]);
+        }
+        else if (is_float(argv[i])){
+            apool[apos].type = ARG_DOUBLE;
+            float f = atof(argv[i]);
+            memcpy(&apool[apos].value, &f, sizeof(float)); // uint32 и float одинакового размера - запихаю как нибудь
         }
         else
         {
