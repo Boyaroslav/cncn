@@ -35,6 +35,7 @@ cmake_install.cmake
 *.o
 *.d
 main
+
 scene.bin
 .vscode/
 .idea/

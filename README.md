@@ -4,7 +4,9 @@
 <p>This project is licensed under the GNU General Public License v3.0.</p>
 <p>This code is going to be used in the Cuck and Cock visual novel game</p>
 <h2>Installation</h2>
-<p>cmake .</p>
+<p>mkdir build</p>
+<p>cd build</p>
+<p>cmake ..   -DCMAKE_POLICY_VERSION_MINIMUM=3.5</p>
 <p>make</p>
 <p>to run - ./lcnovel or CCNVL_FILE=file.ccnvl FONT=optionalfont.ttf ./lcnovel</p>
 <p>to create a new ccnvl file see web_generator/ </p>
