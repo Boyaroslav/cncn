@@ -4,7 +4,7 @@
 
 Scripts are plain-text files processed by the CnCn engine. Each line is one command followed by its arguments. Strings are quoted with `"double quotes"`, numbers are unquoted.
 
-<h2>Commands list</h2>
+## Commands list
 ```
 
 TXT "text" - new text into the textbox
@@ -66,7 +66,7 @@ ENDIF
 
 RET "finale"
 END
-```
+
 
 ### Structure of the project
 
