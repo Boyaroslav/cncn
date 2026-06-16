@@ -838,7 +838,8 @@ void Screen::run(abool &run)
                         if (interface->shown()){
                             interface->hide();
                         }
-                        else{interface->show();}
+                        else{
+                            show_interface();}
                     }
                 }
                 else if (e.type == SDL_TEXTINPUT && textbox->IS_INPUT) {
