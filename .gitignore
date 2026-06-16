@@ -18,7 +18,7 @@ build_windows/
 build_macos/
 lcnovel
 dumper
-edisodes/*
+edisodes/
 CMakeCache.txt
 cmake_install.cmake
 NotoSansMonoCJKsc-Regular.otf
