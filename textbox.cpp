@@ -30,6 +30,7 @@ int check_aw(uint32_t i, message m){ // active - length; no - -1
 
 void TextBox::draw(SDL_Renderer *rend)
 {
+    if(hidden) return;
     SDL_RenderSetClipRect(rend, &border);
     SDL_SetRenderDrawColor(rend, box_color.r, box_color.g, box_color.b, box_color.a);
     SDL_RenderFillRect(rend, &border);
@@ -99,7 +100,7 @@ void TextBox::draw(SDL_Renderer *rend)
     line_height = main_font.measure("A").y + 6;
 
     // если строк слишком много — оставляем только последние (как в чате)
-    if ((int)lines.size() > max_lines)
+    if (((int)lines.size() > max_lines) && REMOVE_LINES)
     {
         lines.erase(lines.begin(), lines.end() - max_lines);
     }
@@ -108,10 +109,13 @@ void TextBox::draw(SDL_Renderer *rend)
     int y = border.y + padding;
     int x = border.x + padding;
 
-    int max_scroll = max(0, ((int)lines.size() * line_height));
+    int visible_height = border.h - padding * 2;
+    int total_height = lines.size() * line_height;
+    int max_scroll = max(0, total_height - visible_height);
     if (target_scroll_y > max_scroll)
         target_scroll_y = max_scroll;
-    
+    if (target_scroll_y < 0)
+        target_scroll_y = 0;
 
 
     // рендерим строки
@@ -128,7 +132,7 @@ void TextBox::draw(SDL_Renderer *rend)
                 if (!tex) continue;
 
                 SDL_Point sz = main_font.measure(text);
-                SDL_Rect dst{cur_x, y +(int)target_scroll_y, sz.x, sz.y};
+                SDL_Rect dst{cur_x, y -(int)target_scroll_y, sz.x, sz.y};
                 SDL_RenderCopy(rend, tex, nullptr, &dst);
                 SDL_DestroyTexture(tex);
 
@@ -143,7 +147,7 @@ void TextBox::draw(SDL_Renderer *rend)
             if (!tex) continue;
 
             SDL_Point sz = main_font.measure(aw.text);
-            SDL_Rect dst{cur_x, y + (int)target_scroll_y, sz.x, sz.y};
+            SDL_Rect dst{cur_x, y - (int)target_scroll_y, sz.x, sz.y};
             SDL_RenderCopy(rend, tex, nullptr, &dst);
             SDL_DestroyTexture(tex);
 
@@ -205,6 +209,7 @@ void TextBox::update(float delta_time)
     }
 }
 
+
 void TextBox::refresh_last()
 {
     message *last_m = &(messages[messages.size() - 1]);
@@ -216,20 +221,18 @@ void TextBox::handle_mouse_wheel(SDL_Event e){
     int start_x = e.wheel.x;
     int start_y = e.wheel.y;
 
-    target_scroll_y += -start_y * text_box_scroll_step;
+    target_scroll_y -= start_y * text_box_scroll_step * INVERSED_SCROLL;
+    
+    if (target_scroll_y < 0)
+        target_scroll_y = 0;
 
-    if (target_scroll_y < -30)
-        target_scroll_y = -30;
-
-
-    std::cout<<"HUII "<<target_scroll_y<<"\n";
 
 
 }
 
 void TextBox::addMessage(std::string text)
 {
-    target_scroll_y = 0;
+    target_scroll_y = 999999;
     //log("I have new message! " + text);
     text = interpolate(text);
     if (messages.size())
@@ -270,14 +273,23 @@ std::string *TextBox::get_last()
 
 void TextBox::update_position(int w, int h)
 {
-    border.x = TEXT_BOX_HORIZONTAL_PADDING;
+    border.x = move_x + TEXT_BOX_HORIZONTAL_PADDING;
     border.w = w - TEXT_BOX_HORIZONTAL_PADDING * 2;
     border.h = h / 3;
-    border.y = h - border.h - TEXT_BOX_VERTICAL_PADDING;
-
+    border.y = move_y + h - border.h - TEXT_BOX_VERTICAL_PADDING;
     max_lines = border.h / line_height;
 
 }
+
+void TextBox::move_position(int x_, int y_){
+    border.x -= move_x;
+    border.x += x_;
+    border.y -= move_y;
+    border.y += y_;
+    move_x = x_;
+    move_y = y_;
+}
+
 
 std::pair<std::vector<active_words>, std::string> TextBox::parse_active_words(std::string text) {
     std::vector<active_words> aw;
@@ -323,4 +335,12 @@ void TextBox::check_press(int px, int py){
             LUA_ACTION_FROM_TEXTBOX = r.laction;
         }
     }
+}
+
+void TextBox::show(){
+    hidden = 0;
+}
+
+void TextBox::hide(){
+    hidden = 1;
 }

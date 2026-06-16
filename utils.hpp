@@ -46,9 +46,13 @@ const int DEFAULT_FONT_SIZE = 28;
 const int TEXT_BOX_HORIZONTAL_PADDING = 100;
 const int TEXT_BOX_VERTICAL_PADDING = 20;
 
+const int REMOVE_LINES = 0; // remove lines when the number reaches max_lines
+
 float LETTER_SPEED = 0.07;
 
 int text_box_scroll_step = 30;
+
+int INVERSED_SCROLL = 1;
 
 #ifdef FORCE_CHARS_SHOWN_FLUENCY
 float MAX_CHARS_SPEED = 1;
@@ -240,3 +244,12 @@ long long int max(long long int x, long long int y){
     if (x >= y) return x;
     return y;
 }
+
+/*
+
+SDL_Color interface_fill = to_sdlc(INTERFACE_FILL_COLOR);
+SDL_Color interface_border = to_sdlc(INTERFACE_BORDER_COLOR);
+SDL_Color interface_text = to_sdlc(INTERFACE_TEXT_COLOR);
+SDL_Color interface_text_border = to_sdlc(INTERFACE_TEXT_BORDER_COLOR);
+
+*/

@@ -74,6 +74,7 @@ const event_type event_types[]= {
     {38, 1, "HIDE"}, // hide sprite {id}
     {39, 1, "WAITV"}, // не пускать дальше код пока переменная var не равна 1 (в сценах где выбор обязательный и тд)
     {40, 3, "SETACTIVE"}, // start index end index function name(lua)
+    {41, 0, "TBTOGGLE"}, // hide or show textbox
 
 
     

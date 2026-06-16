@@ -14,61 +14,14 @@
  * along with CnCn (mynovel). If not, see <https://www.gnu.org/licenses/>.
  */
 
+
 #pragma once
-
-#include "utils.hpp"
-#include "loader.hpp"
-#include "textbox.cpp"
-#include "sprite.hpp"
-#include "gamemixer.hpp"
-#include "luaruntime.hpp"
-#include "interface.hpp"
-#include <setjmp.h>
+#include "screen.hpp"
+#include "menus.hpp"
 
 
-class Screen
-{
-private:
-    SDL_Window *window = nullptr;
-    SDL_Renderer *renderer = nullptr;
-    LuaRuntime lua_runtime;
-    int px, py;
-    int event_pool_position = 0;
-    uint32_t last_time;
-    std::unique_ptr<TextBox> textbox;
-    bool if_result = 1;
-    Audio audio;
 
-
-    int row_n = 0;
-    int row_executed = 0;
-    bool IN_ROW = false;
-
-    Scene *current_scene = nullptr;
-    int event_pool_position_buffer = 0;
-    bool WAITING = false;
-    float wait_timer = 0.0f;
-    int function_commands_left = 0; // когда вызвается функция CALL [func] то на scene->event_count количество эвентов мы берем команды с пула со сдвигом функции, потом возвращаем каретку обратно
-
-    Sprite bg = Sprite();
-
-    std::vector<Sprite> sprites; // персонажы и какие нибудь предметы хз
-    bool NEED_MORE_EVENTS = false;
-    float bg_alpha = 1.0f;
-    float bg_speed = get_value("VAR_BG_CHANGE_SPEED");
-    std::string current_bg_path;
-
-    bool running = true;
-
-public:
-    SDL_Event e{};
-
-    Screen() = default;
-    std::vector<Scene> scenes;
-    int scenes_number = 0;
-    Event *current_event = nullptr;
-
-    bool init_()
+bool Screen::init_()
     {
         // SDL
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
@@ -131,6 +84,9 @@ public:
         lua_runtime = LuaRuntime();
         lua_runtime.init();
 
+        interface = make_pause_menu(width, height, this);
+
+
         textbox = std::make_unique<TextBox>();
 
         SDL_SetWindowTitle(window, (const char *)get_value("WINDOW_TITLE"));
@@ -169,20 +125,51 @@ public:
         };
 
         return true;
-    }
+}
 
-    void load_(char *name)
+void Screen::hide_interface(){
+    interface->hide();
+}
+
+void Screen::show_interface(){
+    if (!need_to_do){
+        need_to_do = [this]{
+            interface = make_pause_menu(width, height, this);
+            interface->show();
+        };
+    } 
+}
+
+void Screen::open_settings(){
+    if (!need_to_do){
+        need_to_do = [this]{
+            interface = make_settings_menu(width, height, this);
+            interface->show();
+        };
+    }
+}
+
+void Screen::main_menu(){
+        if (!need_to_do){
+        need_to_do = [this]{
+            //interface = make_main_menu(width, height, this);
+            interface->show();
+        };
+    }
+}
+
+void Screen::load_(char *name)
     {
         scenes.clear();
         if (!IS_CCNVL)
             load_file(name, scenes, &scenes_number);
         else
             load_scene_by_name(name, scenes);
-    }
+}
 
 
-    void nextEvent()
-    {
+void Screen::nextEvent()
+{
         if (event_pool_position >= epos && running)
         {
             clean();
@@ -215,9 +202,9 @@ public:
             if (current_event->id != 14) // для CALL позицию не сдвигаем
                 event_pool_position++;
         }
-    }
-    bool change_scene(const char *scene_name)
-    {
+}
+bool Screen::change_scene(const char *scene_name)
+{
         int index = find_scene_index_by_name(scenes, scene_name);
         if (index < 0)
         {
@@ -237,11 +224,10 @@ public:
         event_pool_position = sc.event_start;
 
         return true;
-    }
+}
 
-    void handleEvent(bool isnext_needed = true)
-    {
-        
+void Screen::handleEvent(bool isnext_needed)
+{
         if (!if_result &&
             current_event->id != 21 &&
             current_event->id != 22)
@@ -710,13 +696,47 @@ public:
             int y = apool[current_event->args_offset + 1].value;
             int w = apool[current_event->args_offset + 2].value;
             int h = apool[current_event->args_offset + 3].value;
+            textbox->move_position(x, y);
+            if (w != -1 && h != -1)
+                textbox->update_position(w, h);
+        }
+        break;
+        case 37: //TBFILL
+        {
+            const char *hexcol = get_from_spool(apool[current_event->args_offset].value);
+            Color c = {hexcol};
+            
+        }
+        break;
+        case 38: //HIDE
+        {
+
+        }
+        break;
+        case 39: // WAITV
+        {
+            const char *var = get_from_spool(apool[current_event->args_offset].value);
+            var_waiting = std::string(var);
+            set_value(var_waiting, 0);
+            NEED_MORE_EVENTS=1;
+        }
+        break;
+        case 40: //SETACTIVE
+        {
+
+        }
+        break;
+        case 41: // TBTOGGLE
+        {
+            if(textbox->hidden)textbox->show();
+            else{textbox->hide();}
         }
         break;
         }
-    }
+}
 
-    void handleMouseEvent(const SDL_Event &e)
-    {
+void Screen::handleMouseEvent(const SDL_Event &e)
+{
         if (e.type == SDL_MOUSEBUTTONDOWN)
         {
             px = e.button.x;
@@ -738,6 +758,7 @@ public:
 
             if (e.button.button == SDL_BUTTON_LEFT)
             {
+                interface->handle_click(px, py);
                 textbox->check_press(px, py);
                 if (!textbox->is_last_completed())
                 {
@@ -745,7 +766,7 @@ public:
                     //if (textbox->is_last_completed() && !WAITING)
                     //    handleEvent();
                 }
-                else if (!WAITING && !textbox->WAS_ACTION)
+                else if (!WAITING && !textbox->WAS_ACTION && !interface->smth_pressed)
                     NEED_MORE_EVENTS=1;
 
             }
@@ -753,10 +774,10 @@ public:
             {
             }
         }
-    }
+}
 
-    void run(abool &run)
-    {
+void Screen::run(abool &run)
+{
         last_time = SDL_GetTicks();
         textbox->update_position(width, height);
         //nextEvent();
@@ -789,7 +810,7 @@ public:
                         
                         NEED_MORE_EVENTS=1;
                     }
-                    if ((e.key.keysym.sym == SDLK_BACKSPACE) && textbox->IS_INPUT){
+                    else if ((e.key.keysym.sym == SDLK_BACKSPACE) && textbox->IS_INPUT){
                         std::string* last = (textbox->get_last());
                         if (last != nullptr && !(last->empty()) && (last->size() > textbox->input_header_size)){
                             char lp = last->back();
@@ -801,7 +822,8 @@ public:
                         }
                         
                     }
-                    if (mod & KMOD_CTRL)
+
+                    else if (mod & KMOD_CTRL)
                     {
                         if ((e.key.keysym.sym == SDLK_EQUALS && (mod & KMOD_SHIFT)) || e.key.keysym.sym == SDLK_KP_PLUS)
                         {
@@ -811,6 +833,12 @@ public:
                         {
                             main_font.setSize(main_font.size - 5);
                         }
+                    }
+                    else if (e.key.keysym.sym == SDLK_ESCAPE){
+                        if (interface->shown()){
+                            interface->hide();
+                        }
+                        else{interface->show();}
                     }
                 }
                 else if (e.type == SDL_TEXTINPUT && textbox->IS_INPUT) {
@@ -833,17 +861,32 @@ public:
             if (NEED_MORE_EVENTS)
             {
                 NEED_MORE_EVENTS = 0;
-                nextEvent();
-                handleEvent();
+                if (var_waiting.empty() || get_value(var_waiting).as_int() == 1)
+                {
+                    var_waiting.clear();
+                    nextEvent();
+                    handleEvent();
+                }
+                else
+                {
+                    NEED_MORE_EVENTS = 1;
+                }
+            }
+            if (interface->smth_pressed){
+                interface->smth_pressed = 0;
+            }
+            if (need_to_do){
+                need_to_do();
+                need_to_do = nullptr;
             }
             update_and_render();
         }
 
 
         return;
-    }
-    void update_and_render()
-    {
+}
+void Screen::update_and_render()
+{
         uint32_t current_time = SDL_GetTicks();
         float delta_time = (current_time - last_time) / 1000.0f;
         last_time = current_time;
@@ -874,11 +917,12 @@ public:
                  { sprite.update(delta_time); sprite.draw(renderer); });
         }
         textbox->draw(renderer);
+        interface->draw(renderer, px, py);
         SDL_RenderPresent(renderer);
-    }
+}
 
-    void clean()
-    {
+void Screen::clean()
+{
         if (ccnvl_file){
             fclose(ccnvl_file);
             free(ccnvl_data);
@@ -892,10 +936,9 @@ public:
         if (window)
             SDL_DestroyWindow(window);
         SDL_Quit();
-    }
+}
 
-    SDL_Renderer *getRenderer() const
-    {
+SDL_Renderer* Screen::getRenderer() const
+{
         return renderer;
-    }
-};
+}

@@ -230,6 +230,7 @@ class LuaRuntime{
                 luaL_unref(L, LUA_REGISTRYINDEX, ref);
                 lstate_coroutine.erase(co);
             }
+            sync_vars_from_lua(L);
 
     }
 

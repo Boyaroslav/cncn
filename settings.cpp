@@ -67,3 +67,32 @@ Color DEFAULT_ACTIVE_FONT_BORDER_COLOR = {
 };
 
 Color DEFAULT_FONT_BORDER_COLOR = {rgbac{0,0,0,255}};
+
+Color INTERFACE_FILL_COLOR = {
+    rgbac{50, 50, 50, 255}
+
+};
+
+Color HOVERED_INTERFACE_FILL_COLOR = {
+    rgbac{50, 50, 50, 255}
+
+};
+
+
+
+Color INTERFACE_BORDER_COLOR = {
+    rgbac{0, 0, 0, 255}
+};
+
+Color HOVERED_INTERFACE_BORDER_COLOR = {
+    rgbac{0, 0, 0, 255}
+};
+
+
+Color INTERFACE_TEXT_COLOR = {
+    rgbac{255, 255, 255, 255}
+};
+
+Color INTERFACE_TEXT_BORDER_COLOR = {
+    rgbac{0, 0, 0, 255}
+};

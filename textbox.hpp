@@ -59,6 +59,8 @@ class TextBox{
         SDL_Rect border;
         float scroll_y = 0.0f;
         float target_scroll_y = 0.0f;
+        int move_x = 0;
+        int move_y = 0;
 
         int max_lines = 4;
         SDL_Color box_color = to_sdlc(DEFAULT_BOX_COLOR);
@@ -66,7 +68,8 @@ class TextBox{
         std::vector<rendered_aw>r_aws;
         std::chrono::steady_clock::time_point last_update;
     public:
-        TextBox(){log("TextBox created"); IS_INPUT=0; input_header_size=0; IS_HOVERED=0; Outline_color =  to_sdlc(TEXTBOX_OUTLINE_COLOR);}
+        bool hidden = false;
+        TextBox(){log("TextBox created"); hidden = false; IS_INPUT=0; input_header_size=0; IS_HOVERED=0; Outline_color =  to_sdlc(TEXTBOX_OUTLINE_COLOR);}
         ~TextBox(){r_aws.clear(); messages.clear();}
         void addMessage(std::string);
         void cl();
@@ -74,6 +77,8 @@ class TextBox{
         void draw(SDL_Renderer*);
         void set_footer(std::string);
         void update(float);
+        void hide();
+        void show();
         void done_messages();
         std::string* get_last();
         void refresh_last();
@@ -82,6 +87,7 @@ class TextBox{
         void is_hovered(int px, int py); // hover - парить, зависать - типо мышка наведена ли
         bool is_last_completed();
         void update_position(int, int);
+        void move_position(int, int);
         bool IS_INPUT;
         bool IS_HOVERED;
         void check_cursor(int, int);

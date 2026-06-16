@@ -22,6 +22,11 @@ struct sprite_texture {
     int original_texture_height;
 };
 
+struct sprite_region { // for atlas 
+    std::shared_ptr<sprite_texture> texture;
+    SDL_Rect rect;
+};
+
 class Sprite {
 
 private:
@@ -53,6 +58,7 @@ public:
         for (auto t : textures) SDL_DestroyTexture(t.texture);
     }
     SDL_Surface* load_from_ccnvl(const char* path) {
+        // атлас будем грузить по path + ".atlas"
         uint32_t hash = fnv1a_32(path);
 
         auto it = ccnvl_resources.find(hash);

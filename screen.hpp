@@ -1,0 +1,90 @@
+/*
+ * This file is part of CnCn (mynovel).
+ * Copyright (C) 2026 Iaroslav Bobylev
+ * CnCn (mynovel) is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * CnCn (mynovel) is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with CnCn (mynovel). If not, see <https://www.gnu.org/licenses/>.
+ */
+
+
+
+#pragma once
+
+#include "utils.hpp"
+#include "loader.hpp"
+#include "textbox.cpp"
+#include "sprite.hpp"
+#include "gamemixer.hpp"
+#include "luaruntime.hpp"
+#include "interface.hpp"
+#include <setjmp.h>
+
+class Screen
+{
+private:
+    SDL_Window *window = nullptr;
+    SDL_Renderer *renderer = nullptr;
+    LuaRuntime lua_runtime;
+    int px, py;
+    int event_pool_position = 0;
+    uint32_t last_time;
+    std::unique_ptr<TextBox> textbox;
+    std::unique_ptr<Menu> interface;
+    bool if_result = 1;
+    Audio audio;
+
+
+    int row_n = 0;
+    int row_executed = 0;
+    bool IN_ROW = false;
+
+    Scene *current_scene = nullptr;
+    int event_pool_position_buffer = 0;
+    bool WAITING = false;
+    float wait_timer = 0.0f;
+    int function_commands_left = 0; // когда вызвается функция CALL [func] то на scene->event_count количество эвентов мы берем команды с пула со сдвигом функции, потом возвращаем каретку обратно
+
+    Sprite bg = Sprite();
+
+    std::vector<Sprite> sprites; // персонажы и какие нибудь предметы хз
+    bool NEED_MORE_EVENTS = false;
+    float bg_alpha = 1.0f;
+    float bg_speed = get_value("VAR_BG_CHANGE_SPEED");
+    std::string current_bg_path;
+
+    bool running = true;
+    std::string var_waiting = "";
+
+public:
+    SDL_Event e{};
+
+    Screen() = default;
+    std::vector<Scene> scenes;
+    int scenes_number = 0;
+    Event *current_event = nullptr;
+    std::function<void()>need_to_do;
+
+    bool init_();
+    void load_(char *name);
+    void nextEvent();
+    bool change_scene(const char *scene_name);
+    void handleEvent(bool isnext_needed = true);
+    void handleMouseEvent(const SDL_Event &e);
+    void run(abool &run);
+    void update_and_render();
+    void clean();
+    void show_interface();
+    void hide_interface();
+    void open_settings();
+    void main_menu();
+    void exit_program();
+    SDL_Renderer *getRenderer() const;
+};
