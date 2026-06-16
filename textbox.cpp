@@ -218,6 +218,7 @@ void TextBox::refresh_last()
 }
 
 void TextBox::handle_mouse_wheel(SDL_Event e){
+    if (hidden) return;
     int start_x = e.wheel.x;
     int start_y = e.wheel.y;
 
@@ -315,6 +316,7 @@ std::pair<std::vector<active_words>, std::string> TextBox::parse_active_words(st
 
 
 void TextBox::check_cursor(int px, int py) {
+    if (hidden) return;
     for (auto &r : r_aws) {
         if (px >= r.r.x && px <= r.r.x + r.r.w &&
             py >= r.r.y && py <= r.r.y + r.r.h)

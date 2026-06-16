@@ -36,10 +36,11 @@ private:
     int px, py;
     int event_pool_position = 0;
     uint32_t last_time;
-    std::unique_ptr<TextBox> textbox;
     std::unique_ptr<Menu> interface;
     bool if_result = 1;
     Audio audio;
+
+    bool if_its_game = 1; // если это типо главное меню а не игра чтоб ESC не прожимался и тд
 
 
     int row_n = 0;
@@ -64,6 +65,7 @@ private:
     std::string var_waiting = "";
 
 public:
+    std::unique_ptr<TextBox> textbox;
     SDL_Event e{};
 
     Screen() = default;
@@ -85,6 +87,8 @@ public:
     void hide_interface();
     void open_settings();
     void main_menu();
+    void set_if_its_game(bool state);
     void exit_program();
+    void build_n_run_interface(std::function<std::unique_ptr<Menu>(int, int, Screen*)> b);
     SDL_Renderer *getRenderer() const;
 };

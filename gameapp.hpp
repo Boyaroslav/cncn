@@ -759,6 +759,7 @@ void Screen::handleMouseEvent(const SDL_Event &e)
             if (e.button.button == SDL_BUTTON_LEFT)
             {
                 interface->handle_click(px, py);
+                if (if_its_game){
                 textbox->check_press(px, py);
                 if (!textbox->is_last_completed())
                 {
@@ -769,7 +770,7 @@ void Screen::handleMouseEvent(const SDL_Event &e)
                 else if (!WAITING && !textbox->WAS_ACTION && !interface->smth_pressed)
                     NEED_MORE_EVENTS=1;
 
-            }
+            }}
             else if (e.button.button == SDL_BUTTON_RIGHT)
             {
             }
@@ -834,7 +835,7 @@ void Screen::run(abool &run)
                             main_font.setSize(main_font.size - 5);
                         }
                     }
-                    else if (e.key.keysym.sym == SDLK_ESCAPE){
+                    else if ((e.key.keysym.sym == SDLK_ESCAPE) && if_its_game == 1){
                         if (interface->shown()){
                             interface->hide();
                         }
@@ -846,7 +847,7 @@ void Screen::run(abool &run)
                     *(textbox->get_last()) += e.text.text;
                     textbox->refresh_last();
                 }
-                else if (e.type == SDL_MOUSEWHEEL){
+                else if ((e.type == SDL_MOUSEWHEEL) && if_its_game == 1){
                     textbox->handle_mouse_wheel(e);
                 }
                 else if (e.type == SDL_MOUSEMOTION){
@@ -942,4 +943,23 @@ void Screen::clean()
 SDL_Renderer* Screen::getRenderer() const
 {
         return renderer;
+}
+
+
+void Screen::set_if_its_game(bool s){
+    if_its_game = s;
+}
+
+void Screen::build_n_run_interface(std::function<std::unique_ptr<Menu>(int, int, Screen*)> b){
+    interface = b(width, height, this);
+    interface->show();
+}
+
+void Screen::exit_program(){
+        if (!need_to_do){
+        need_to_do = [this]{
+                set_value("__running__", 0);
+                exit(0);
+        };
+    }
 }

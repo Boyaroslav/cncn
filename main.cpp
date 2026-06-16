@@ -56,7 +56,10 @@ int main(int argc, char *argv[])
     scr.init_();
 
     scr.load_(n);
-    scr.change_scene("main");
+    scr.change_scene("menu");
+
+    scr.set_if_its_game(0);
+    scr.build_n_run_interface(make_main_menu);
 
     scr.run(run);
 
