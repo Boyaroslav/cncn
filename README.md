@@ -11,6 +11,8 @@
 <p>to run - ./lcnovel or CCNVL_FILE=file.ccnvl FONT=optionalfont.ttf ./lcnovel</p>
 <p>to create a new ccnvl file see web_generator/ </p>
 
+<p>If you dont want to create yor own ccnvl file, you can download it from https://t.me/cncn_engine</p>
+
 
 <h2>To create ccnvl project:</h2>
 <p>create folder of the project with all data included</p>
