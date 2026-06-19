@@ -34,6 +34,7 @@ public:
         const char* fonts_to_try[] = {
             FONT,
             DEFAULT_FONT,
+            "/system/fonts/Roboto-Regular.ttf", 
 
             "/usr/share/fonts/dejavu/DejaVuSansMono.ttf",
 

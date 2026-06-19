@@ -21,17 +21,23 @@
 #undef main
 #endif
 
-
 int main(int argc, char *argv[])
 {
+    #ifdef __ANDROID__
+    LOGI("MAIN STARTED");
+    #endif
 
-    char n[32] = "cock novel";
+    char n[512] = "cock novel";
 
     abool run = true;
 
     const char *env = getenv("CCNVL_FILE");
 
     const char *font_ = getenv("FONT");
+
+    #ifdef __ANDROID__
+    LOGI("LCNOVEL: %s", env);
+    #endif
 
 
     if (env)

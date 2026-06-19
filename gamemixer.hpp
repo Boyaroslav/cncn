@@ -16,6 +16,10 @@
 
 #include "utils.hpp"
 
+#ifndef Mix_PlayChannel
+#define Mix_PlayChannel(channel,chunk,loops) Mix_PlayChannelTimed(channel,chunk,loops,-1)
+#endif
+
 class Audio
 {
 private:

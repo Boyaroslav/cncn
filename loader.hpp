@@ -31,6 +31,8 @@ int load_scenes_from_memory(const uint8_t, size_t, std::vector<Scene> &);
 
 int load_ccnvl(const char *filename, std::vector<Scene> &sc_out, int *out_count)
 {
+
+    log("LCNOVEL Looking CCNVL" + std::string(filename));
     if (ccnvl_file) fclose(ccnvl_file);
     ccnvl_file = fopen(filename, "rb");
 

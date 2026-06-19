@@ -20,8 +20,6 @@
 #include "utils.hpp"
 #include "font.hpp"
 
-#define MENU_THINGS std::variant<Button>
-
 extern Font main_font;
 
 class Button{
@@ -84,6 +82,7 @@ class Button{
 
 };
 
+using MENU_THINGS = std::variant<Button>;
 
 class Menu{
     private:
@@ -92,6 +91,8 @@ class Menu{
     bool if_shown = 0;
     public:
     bool smth_pressed=0;
+
+    Menu() = default;
 
     Menu(int x, int y, int w, int h, std::initializer_list<MENU_THINGS> items = {})
      : x(x), y(y), w(w), h(h), things(items) {}

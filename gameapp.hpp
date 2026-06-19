@@ -23,6 +23,7 @@
 
 bool Screen::init_()
     {
+        
         // SDL
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
         {
@@ -51,13 +52,29 @@ bool Screen::init_()
             return false;
         }
 
+        #ifdef __ANDROID__
+        SDL_DisplayMode dm;
+        if (SDL_GetCurrentDisplayMode(0, &dm) == 0) {
+            real_width = dm.w;
+            real_height = dm.h;
+            LOGI("Android display mode: %dx%d", width, height);
+        } else {
+            LOGE("SDL_GetCurrentDisplayMode failed: %s", SDL_GetError());
+        }
+        #endif
+
         window = SDL_CreateWindow(
             "lcnovel",
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
-            width,
-            height,
-            SDL_WINDOW_SHOWN);
+            real_width,
+            real_height,
+            #ifdef __ANDROID__
+                SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN
+            #else
+                SDL_WINDOW_SHOWN
+            #endif
+            );
 
         if (!window)
         {
@@ -76,6 +93,8 @@ bool Screen::init_()
             log("SDL_CreateRenderer error");
             return false;
         }
+
+        SDL_RenderSetLogicalSize(renderer, width, height);
         vars_init();
 
         main_font = Font();
@@ -160,6 +179,9 @@ void Screen::main_menu(){
 
 void Screen::load_(char *name)
     {
+        #ifdef __ANDROID__
+        LOGI("load_ %s", name);
+        #endif
         scenes.clear();
         if (!IS_CCNVL)
             load_file(name, scenes, &scenes_number);
@@ -797,6 +819,7 @@ void Screen::run(abool &run)
                     set_value("__running__", 0);
                     exit(0);
                 }
+    
                 handleMouseEvent(e);
                 if (e.type == SDL_KEYDOWN)
                 {

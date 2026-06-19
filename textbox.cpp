@@ -31,6 +31,7 @@ int check_aw(uint32_t i, message m){ // active - length; no - -1
 void TextBox::draw(SDL_Renderer *rend)
 {
     if(hidden) return;
+    if (!rend) return;
     SDL_RenderSetClipRect(rend, &border);
     SDL_SetRenderDrawColor(rend, box_color.r, box_color.g, box_color.b, box_color.a);
     SDL_RenderFillRect(rend, &border);

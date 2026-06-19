@@ -69,7 +69,7 @@ uint32_t scene_data_start = 0;
 // const char* DEFAULT_FONT = "FreeMono.ttf";
 const char *DEFAULT_FONT = "./NotoSansMonoCJKsc-Regular.otf";
 
-char FONT[256];
+char FONT[512];
 
 struct index_db_element{
     uint32_t offset;
@@ -83,10 +83,22 @@ struct index_db_element{
 std::unordered_map<uint32_t, index_db_element>ccnvl_resources;
 std::unordered_map<uint32_t, index_db_element>ccnvl_scenes;
 
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOG_TAG "LCNOVEL"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#endif
+
 void log(std::string msg)
 {
     std::cout << msg << "\n";
+    #ifdef __ANDROID__
+    __android_log_print(1, "LCNOVEL", "%s", msg.c_str());
+    #endif
     return;
+
 }
 
 void log(SDL_Rect msg)
@@ -119,8 +131,10 @@ uint32_t fnv1a_32(const std::string &s)
     return hash;
 }
 
-int width = 1024;
-int height = 600;
+int real_width = 1024;
+int real_height = 600;
+int width = real_width;
+int height = real_height;
 
 #define abool std::atomic<bool>
 
@@ -230,6 +244,8 @@ struct active_words{
     uint32_t start;
     uint32_t end;
     std::string lua_action;
+        active_words(unsigned int start_, unsigned int end_, const std::string& function_)
+        : start(start_), end(end_), lua_action(function_) {}
 };
 
 struct ActiveWord{
@@ -237,7 +253,7 @@ struct ActiveWord{
     std::string text;
 };
 
-#define text_line std::variant<std::string, ActiveWord>
+using text_line = std::variant<std::string, ActiveWord>;
 
 
 long long int max(long long int x, long long int y){

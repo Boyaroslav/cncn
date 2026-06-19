@@ -171,6 +171,15 @@ public:
     }
 
     void draw(SDL_Renderer* rend) {
+        if (!rend){
+            log("NO RENDERER");
+            return;
+        }
+        if (textures.empty()){
+            log("textures empty");
+            return;
+
+        }
         SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
         SDL_Rect r_ = placed_rect(rect);
         if ((future_index == -1) && in_fade) {
