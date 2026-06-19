@@ -220,8 +220,17 @@ void TextBox::refresh_last()
 
 void TextBox::handle_mouse_wheel(SDL_Event e){
     if (hidden) return;
-    int start_x = e.wheel.x;
-    int start_y = e.wheel.y;
+    int start_x = 0;
+    int start_y = 0;
+    if (e.type == SDL_FINGERMOTION){
+        start_x = e.tfinger.dx;
+        start_y = (e.tfinger.dy * height);
+
+    }
+    else{
+        start_x = e.wheel.x;
+        start_y = e.wheel.y;
+    }
 
     target_scroll_y -= start_y * text_box_scroll_step * INVERSED_SCROLL;
     

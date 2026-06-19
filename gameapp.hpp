@@ -759,6 +759,7 @@ void Screen::handleEvent(bool isnext_needed)
 
 void Screen::handleMouseEvent(const SDL_Event &e)
 {
+
         if (e.type == SDL_MOUSEBUTTONDOWN)
         {
             px = e.button.x;
@@ -767,6 +768,10 @@ void Screen::handleMouseEvent(const SDL_Event &e)
 
         if (e.type == SDL_MOUSEBUTTONUP)
         {
+            if (WAS_MOTION){
+                WAS_MOTION = 0;
+                return;
+            }
             if (textbox->IS_INPUT){
                     SDL_StopTextInput();
                     std::string l = *(textbox->get_last());
@@ -818,6 +823,14 @@ void Screen::run(abool &run)
                 {
                     set_value("__running__", 0);
                     exit(0);
+                }
+
+                if (e.type == SDL_FINGERMOTION){
+                    if (std::fabs(e.tfinger.dy)> 0.005f)
+                        WAS_MOTION = 1;
+
+                    textbox->handle_mouse_wheel(e);
+
                 }
     
                 handleMouseEvent(e);

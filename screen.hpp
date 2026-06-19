@@ -67,6 +67,7 @@ private:
 public:
     std::unique_ptr<TextBox> textbox;
     SDL_Event e{};
+    bool WAS_MOTION = false;
 
     Screen() = default;
     std::vector<Scene> scenes;
