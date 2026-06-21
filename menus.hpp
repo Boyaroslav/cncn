@@ -38,7 +38,7 @@ inline std::unique_ptr<Menu> make_settings_menu(int width, int height, Screen* s
 
 inline std::unique_ptr<Menu> make_main_menu(int width, int height, Screen* s) {
     auto m = std::make_unique<Menu>(width/4, 30, width, height);
-    m->add_button(Button({0, 0, width/2, 40}, [s]{s->set_if_its_game(1); s->hide_interface(); s->textbox->show(); s->change_scene("main");}, "Start"));
+    m->add_button(Button({0, 0, width/2, 40}, [s]{s->start_game();}, "Start"));
     m->add_button(Button({0, 200, width/2, 40}, [s]{ s->exit_program(); }, "Quit"));
     return m;
 }

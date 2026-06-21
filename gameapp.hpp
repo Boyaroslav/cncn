@@ -171,6 +171,19 @@ void Screen::open_settings(){
     }
 }
 
+void Screen::start_game(){
+    if (!need_to_do){
+        need_to_do = [this]{
+            interface = make_pause_menu(width, height, this);
+            interface->hide();
+            set_if_its_game(1);
+            textbox->show();
+            //load_(file_name.data());
+            change_scene("main");
+        };
+    }
+}
+
 void Screen::main_menu(){
         if (!need_to_do){
         need_to_do = [this]{

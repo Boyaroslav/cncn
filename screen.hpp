@@ -95,6 +95,7 @@ public:
     void show_interface();
     void hide_interface();
     void open_settings();
+    void start_game();
     void main_menu();
     void set_if_its_game(bool state);
     void exit_program();
