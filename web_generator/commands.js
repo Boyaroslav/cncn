@@ -521,6 +521,26 @@ Blockly.Blocks['SETACTIVE'] = {
   }
 };
 
+Blockly.Blocks['TBTOGGLE'] = {
+  init: function () {
+    this.appendDummyInput().appendField("TBTOGGLE");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_TEXT);
+    this.setTooltip("Hide or show textbox");
+  }
+};
+
+Blockly.Blocks['TBGHOST'] = {
+  init: function () {
+    this.appendDummyInput().appendField("TBGHOST");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(COL_TEXT);
+    this.setTooltip("Textbox renders text only (no background/frame)");
+  }
+};
+
 
 // ----------------------------
 // TOOLBOX (CATEGORIES)
@@ -553,6 +573,9 @@ const COMMANDS_TOOLBOX = {
         { "kind":"sep" },
         { "kind":"block", "type":"TBRECT"},
         { "kind":"block", "type":"TBFILL"},
+        { "kind":"block", "type":"TBTOGGLE"},
+        { "kind":"block", "type":"TBGHOST"},
+
         
         { "kind":"block","type":"text" }
       ]

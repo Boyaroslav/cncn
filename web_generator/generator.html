@@ -379,6 +379,13 @@ document.addEventListener('keydown', (e) => {
 
         return `TBCAP "${name}"\n`;
       };
+      jsGenerator.forBlock['TBTOGGLE'] = function (block) {
+        return `TBTOGGLE\n`;
+      };
+
+      jsGenerator.forBlock['TBGHOST'] = function (block) {
+        return `TBGHOST\n`;
+      };
       jsGenerator.forBlock['LUA_IMPORT'] = function (block){
         let lib = jsGenerator.valueToCode(block, "LIB", jsGenerator.ORDER_ATOMIC) || `""`;
         lib = cleanValue(lib);
