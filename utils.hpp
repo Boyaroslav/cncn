@@ -16,6 +16,7 @@
 
 
 #pragma once
+#define _GNU_SOURCE
 #include <iostream>
 #include <string>
 #include <vector>
@@ -23,6 +24,7 @@
 #include <atomic>
 #include <variant>
 #include <unordered_map>
+#include <cstdio>
 #include <cstdint>
 #include <chrono>
 #include <SDL.h>
@@ -31,7 +33,6 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include "lua.hpp"
-
 #include "settings.cpp"
 
 #define FORCE_CHARS_SHOWN_FLUENCY 0
@@ -272,3 +273,28 @@ SDL_Color interface_text = to_sdlc(INTERFACE_TEXT_COLOR);
 SDL_Color interface_text_border = to_sdlc(INTERFACE_TEXT_BORDER_COLOR);
 
 */
+
+
+struct mem_buffer {
+    std::vector<char> data;
+};
+
+static int lcnovel_mem_write_cb(void* cookie, const char* buf, int size) {
+    mem_buffer* mb = static_cast<mem_buffer*>(cookie);
+    mb->data.insert(mb->data.end(), buf, buf + size);
+    return size;
+}
+
+static int lcnovel_mem_close_cb(void*) {
+    return 0;
+}
+
+static FILE* lcnovel_open_mem_stream(mem_buffer* mb) {
+    return funopen(
+        mb,
+        nullptr,
+        lcnovel_mem_write_cb,
+        nullptr,
+        lcnovel_mem_close_cb
+    );
+}

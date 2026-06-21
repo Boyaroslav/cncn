@@ -1107,16 +1107,16 @@ void Screen::update_snapshot(){
     if (!can_save()){
         return;
     }
-    char* buf = nullptr;
-    size_t buf_size = 0;
-    FILE* mem_file = open_memstream(&buf, &buf_size);
+
+    mem_buffer mb;
+    FILE* mem_file = lcnovel_open_mem_stream(&mb);
     if (!mem_file) return;
+
     write_states(mem_file);
     fflush(mem_file);
-    save_snapshot.assign(buf, buf + buf_size);
     fclose(mem_file);
-}
 
+    save_snapshot.assign(mb.data.begin(), mb.data.end());}
 
 void Screen::write_states(FILE *save_file){
     fwrite(&VERSION, sizeof(const uint32_t), 1, save_file);
