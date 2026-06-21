@@ -107,6 +107,9 @@ bool Screen::init_()
 
 
         textbox = std::make_unique<TextBox>();
+        if (if_its_game == 0){
+            textbox->hide();
+        }
 
         SDL_SetWindowTitle(window, (const char *)get_value("WINDOW_TITLE"));
 
@@ -171,7 +174,18 @@ void Screen::open_settings(){
 void Screen::main_menu(){
         if (!need_to_do){
         need_to_do = [this]{
-            //interface = make_main_menu(width, height, this);
+            textbox->cl();
+            sprites.clear();
+            
+            bg.clear();
+            
+            set_if_its_game(0);
+            IS_CCNVL = 0;
+            load_(file_name.data());
+            textbox->move_position(0,0);
+            textbox->hide();
+            change_scene("menu");
+            interface = make_main_menu(width, height, this);
             interface->show();
         };
     }
@@ -886,6 +900,14 @@ void Screen::run(abool &run)
                         }
                         else{
                             show_interface();}
+                    }
+                    else if(e.key.keysym.sym == SDLK_AC_BACK){
+                            if (interface->shown()){
+
+                                main_menu();
+                            }
+                            else{
+                                show_interface();}
                     }
                 }
                 else if (e.type == SDL_TEXTINPUT && textbox->IS_INPUT) {

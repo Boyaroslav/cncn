@@ -51,7 +51,6 @@ private:
     int event_pool_position_buffer = 0;
     bool WAITING = false;
     std::string current_scene_name;
-    std::string file_name;
     std::string current_script_name = "";
     float wait_timer = 0.0f;
     int function_commands_left = 0; // когда вызвается функция CALL [func] то на scene->event_count количество эвентов мы берем команды с пула со сдвигом функции, потом возвращаем каретку обратно
@@ -69,6 +68,7 @@ private:
     std::vector<uint8_t> save_snapshot; // мы его каждый ход обновляем и когда save то сейвим
 
 public:
+    std::string file_name;
     std::unique_ptr<TextBox> textbox;
     SDL_Event e{};
     bool WAS_MOTION = false;

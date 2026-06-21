@@ -26,7 +26,7 @@ inline std::unique_ptr<Menu> make_pause_menu(int width, int height, Screen* s) {
     m->add_button(Button({0,   50, width/2, 40}, [s]{ s->qsave(); s->hide_interface();}, "Quick save"));
     m->add_button(Button({0,   100, width/2, 40}, [s]{ s->qload(); s->hide_interface();}, "Quick load"));
     m->add_button(Button({0,  150, width/2, 40}, [s]{ s->open_settings(); },  "Settings"));
-    m->add_button(Button({0, 200, width/2, 40}, [s]{ s->main_menu(); },              "Exit"));
+    m->add_button(Button({0, 200, width/2, 40}, [s]{ s->change_scene("menu"); s->main_menu(); },              "Exit"));
     return m;
 }
 

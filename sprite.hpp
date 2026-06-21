@@ -59,6 +59,12 @@ public:
         texture_hashes.clear();
         for (auto t : textures) SDL_DestroyTexture(t.texture);
     }
+
+    void clear(){
+        texture_hashes.clear();
+        for (auto t : textures) SDL_DestroyTexture(t.texture);
+    }
+
     SDL_Surface* load_from_ccnvl(const char* path) {
         // атлас будем грузить по path + ".atlas"
         uint32_t hash = fnv1a_32(path);
