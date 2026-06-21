@@ -181,6 +181,11 @@ void Screen::main_menu(){
             
             set_if_its_game(0);
             IS_CCNVL = 0;
+            epos = 0;
+            apos = 0;
+            spos = 0;
+            ccnvl_resources.clear();
+            ccnvl_scenes.clear();
             load_(file_name.data());
             textbox->move_position(0,0);
             textbox->hide();
