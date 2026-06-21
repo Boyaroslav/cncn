@@ -78,7 +78,7 @@ int load_ccnvl(const char *filename, std::vector<Scene> &sc_out, int *out_count)
         ccnvl_resources[hash_n] = index_db_element{indx, size};
     }
 
-    sc_out.clear();
+    sc_out.clear(); // я так понял я тут нахуй перепутал сцены и скрипты ну лан пох
 
     //  сцены (.bin s)
 
@@ -241,6 +241,18 @@ int find_scene_index_by_name(const std::vector<Scene> &scenes, const std::string
     {
         std::cout << scenes[i].name << " " << name.c_str() << "\n";
         if (strcmp(scenes[i].name, name.c_str()) == 0)
+        {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
+int find_scene_index_by_hash(const std::vector<Scene> &scenes, uint32_t& hash)
+{
+    for (size_t i = 0; i < scenes.size(); i++)
+    {
+        if (fnv1a_32(scenes[i].name) == hash)
         {
             return static_cast<int>(i);
         }
@@ -419,4 +431,41 @@ int load_scene_by_name(const char *name, std::vector<Scene> &sc_out)
         sc.size,
         sc_out
     );
+}
+
+int load_scene_by_hash(uint32_t hash, std::vector<Scene> &sc_out){
+  if (!ccnvl_file)
+    {
+        printf("CCNVL not loaded\n");
+        return 0;
+    }
+
+
+    auto it = ccnvl_scenes.find(hash);
+
+    if (it == ccnvl_scenes.end())
+    {
+        return 0;
+    }
+
+    const index_db_element &sc = it->second;
+
+    uint32_t real_offset = scene_data_start + sc.offset;
+
+
+    return load_bin_from_ccnvl(
+        ccnvl_file,
+        real_offset,
+        sc.size,
+        sc_out
+    );
+}
+
+Scene* find_scene_by_position(std::vector<Scene>& scenes, uint32_t pos) {
+    for (auto& sc : scenes) {
+        if (pos >= sc.event_start && pos < sc.event_start + sc.event_count)
+            return &sc;
+    }
+    log("scene not found");
+    return nullptr;
 }

@@ -356,3 +356,84 @@ void TextBox::show(){
 void TextBox::hide(){
     hidden = 1;
 }
+
+
+void TextBox::write_yourself(FILE* ptr){
+    fwrite(&move_x, sizeof(uint32_t), 1, ptr);
+    fwrite(&move_y, sizeof(uint32_t), 1, ptr);
+    uint32_t n = messages.size();
+    fwrite(&n, sizeof(uint32_t), 1, ptr);
+    for(message& m : messages){
+        uint32_t sz = m.text.size();
+        fwrite(&sz, sizeof(uint32_t), 1, ptr);
+        fwrite(m.text.data(), sizeof(char), m.text.size(), ptr);
+        fwrite(&m.speed, sizeof(float), 1, ptr);
+        float ch_sw = m.chars_shown;
+        fwrite(&ch_sw, sizeof(float), 1, ptr);
+        bool is_complete = m.is_complete;
+        fwrite(&is_complete, sizeof(bool), 1, ptr);
+        sz = m.aw.size();
+        fwrite(&sz, sizeof(uint32_t), 1, ptr);
+        for(auto& a: m.aw){
+            uint32_t st = a.start;
+            uint32_t en = a.end;
+            uint32_t ln = a.lua_action.size();
+            fwrite(&st, sizeof(uint32_t), 1, ptr);
+            fwrite(&en, sizeof(uint32_t), 1, ptr);
+            fwrite(&ln, sizeof(uint32_t), 1, ptr);
+            fwrite(a.lua_action.data(), sizeof(char), a.lua_action.size(), ptr);
+
+        }
+    }
+
+}
+
+void TextBox::read_yourself(FILE* ptr){
+    messages.clear();
+    fread(&move_x, sizeof(uint32_t), 1, ptr);
+    fread(&move_y, sizeof(uint32_t), 1, ptr);
+
+    uint32_t n;
+    fread(&n, sizeof(uint32_t), 1, ptr);
+
+    for (uint32_t i = 0; i < n; ++i) {
+        uint32_t sz;
+        fread(&sz, sizeof(uint32_t), 1, ptr);
+
+        std::string text(sz, '\0');
+        fread(&text[0], sizeof(char), sz, ptr);
+
+        float speed;
+        fread(&speed, sizeof(float), 1, ptr);
+
+        float chars_shown;
+        fread(&chars_shown, sizeof(float), 1, ptr);
+
+        bool is_complete;
+        fread(&is_complete, sizeof(bool), 1, ptr);
+
+        uint32_t aw_count;
+        fread(&aw_count, sizeof(uint32_t), 1, ptr);
+
+        std::vector<active_words> aw;
+        aw.reserve(aw_count);
+        for (uint32_t j = 0; j < aw_count; ++j) {
+            uint32_t st, en, ln;
+            fread(&st, sizeof(uint32_t), 1, ptr);
+            fread(&en, sizeof(uint32_t), 1, ptr);
+            fread(&ln, sizeof(uint32_t), 1, ptr);
+
+            std::string lua_action(ln, '\0');
+            fread(&lua_action[0], sizeof(char), ln, ptr);
+
+            aw.emplace_back(st, en, lua_action);
+        }
+
+        // start_time восстанавливаем, а не читаем из файла
+        float elapsed_seconds = (speed > 0.0f) ? (chars_shown / speed) : 0.0f;
+        auto start_time = std::chrono::steady_clock::now()
+            - std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                  std::chrono::duration<float>(elapsed_seconds));
+        messages.emplace_back(text, speed, start_time, aw, chars_shown, is_complete);
+    }
+}

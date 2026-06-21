@@ -92,6 +92,8 @@ class TextBox{
         bool IS_HOVERED;
         void check_cursor(int, int);
         void check_press(int, int);
+        void write_yourself(FILE* ptr);
+        void read_yourself(FILE* ptr);
         bool WAS_ACTION = false; // если на слово нажали чтоб не жмалось NEED_MORE_EVENTS
         int input_header_size;
 };

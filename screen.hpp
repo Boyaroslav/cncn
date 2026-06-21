@@ -50,6 +50,9 @@ private:
     Scene *current_scene = nullptr;
     int event_pool_position_buffer = 0;
     bool WAITING = false;
+    std::string current_scene_name;
+    std::string file_name;
+    std::string current_script_name = "";
     float wait_timer = 0.0f;
     int function_commands_left = 0; // когда вызвается функция CALL [func] то на scene->event_count количество эвентов мы берем команды с пула со сдвигом функции, потом возвращаем каретку обратно
 
@@ -63,6 +66,7 @@ private:
 
     bool running = true;
     std::string var_waiting = "";
+    std::vector<uint8_t> save_snapshot; // мы его каждый ход обновляем и когда save то сейвим
 
 public:
     std::unique_ptr<TextBox> textbox;
@@ -84,12 +88,19 @@ public:
     void run(abool &run);
     void update_and_render();
     void clean();
+    void save();
+    void load();
+    void qsave();
+    void qload();
     void show_interface();
     void hide_interface();
     void open_settings();
     void main_menu();
     void set_if_its_game(bool state);
     void exit_program();
+    void write_states(FILE *ptr);
+    void update_snapshot();
+    bool can_save();
     void build_n_run_interface(std::function<std::unique_ptr<Menu>(int, int, Screen*)> b);
     SDL_Renderer *getRenderer() const;
 };

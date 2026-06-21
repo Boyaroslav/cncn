@@ -71,7 +71,7 @@ Var make_var(int v)
 {
     Var r;
     r.type = Var::Type::Int;
-    r.f = v;
+    r.i = v;
     return r;
 }
 Var make_var(std::string v)
@@ -81,7 +81,7 @@ Var make_var(std::string v)
     r.s = v;
     return r;
 }
-
+// может где то переопределяться, чекни потом
 std::unordered_map<std::string, Var> variables;
 
 void set_value(const std::string &t, uint32_t v) { variables[t] = make_var(v); }
@@ -165,4 +165,39 @@ std::string interpolate(const std::string &text)
     }
 
     return result;
+}
+
+void save_vars(FILE* ptr){
+    for(auto& pair : variables){
+        switch (pair.second.type){
+            case Var::Type::Int:
+            {
+
+            }
+            break;
+            case Var::Type::Float:
+            {
+
+                
+            }
+            break;
+            case Var::Type::String:
+            {
+
+                
+            }
+            break;
+            case Var::Type::Null:
+            {
+
+            }
+            break;
+        }
+
+    }
+}
+
+
+void load_vars(FILE* ptr){
+
 }

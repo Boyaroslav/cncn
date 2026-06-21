@@ -31,6 +31,7 @@ class Sprite {
 
 private:
     std::vector<sprite_texture> textures;
+    std::vector<uint32_t> texture_hashes;
     SDL_Rect rect = {0,0,0,0};
     int x = 0, y=0;
     int texture_size_w, texture_size_h;
@@ -55,6 +56,7 @@ private:
 
 public:
     ~Sprite() {
+        texture_hashes.clear();
         for (auto t : textures) SDL_DestroyTexture(t.texture);
     }
     SDL_Surface* load_from_ccnvl(const char* path) {
@@ -66,6 +68,7 @@ public:
             log("CCNVL resource not found: " + std::string(path));
             return nullptr;
         }
+        texture_hashes.push_back(hash);
 
         auto& res = it->second;
         SDL_RWops* rw = SDL_RWFromMem(ccnvl_data + res.offset, res.size);
@@ -79,6 +82,36 @@ public:
 
         return surf;
     } 
+
+    void load_hash(SDL_Renderer* rend, uint32_t hash) {
+
+        auto it = ccnvl_resources.find(hash);
+        if (it == ccnvl_resources.end()) {
+            log("CCNVL resource not found: " + std::to_string(hash));
+            return;
+        }
+        // load hash не добавляет в texture_hash ничего!
+
+        auto& res = it->second;
+        SDL_RWops* rw = SDL_RWFromMem(ccnvl_data + res.offset, res.size);
+        if (!rw) return;
+
+        SDL_Surface* surf = IMG_Load_RW(rw, 1);
+        if (!surf) {
+            log("Failed to load surface from CCNVL: " + std::to_string(hash));
+            return;
+        }
+
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(rend, surf);
+        SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
+        SDL_FreeSurface(surf);
+        int w, h;
+        SDL_QueryTexture(tex, NULL, NULL, &w, &h);
+        textures.push_back(sprite_texture{tex, w, h});
+
+    } 
+
+
     void load_texture(SDL_Renderer* rend, const char* path, int index=-1) {
         SDL_Surface* surf;
         if (future_index != -1){
@@ -176,7 +209,6 @@ public:
             return;
         }
         if (textures.empty()){
-            log("textures empty");
             return;
 
         }
@@ -249,6 +281,7 @@ Sprite& operator=(const Sprite&) = delete;
 
 Sprite(Sprite&& other) noexcept {
     textures = std::move(other.textures);
+    texture_hashes = std::move(other.texture_hashes);
     rect = other.rect;
     x = other.x;
     y = other.y;
@@ -265,6 +298,7 @@ Sprite(Sprite&& other) noexcept {
 
 Sprite& operator=(Sprite&& other) noexcept {
     textures = std::move(other.textures);
+    texture_hashes = std::move(other.texture_hashes);
     rect = other.rect;
     x = other.x;
     y = other.y;
@@ -278,6 +312,67 @@ Sprite& operator=(Sprite&& other) noexcept {
 
     other.textures.clear();
     return *this;
+}
+
+void write_yourself(FILE *ptr){ // пишет про себя все в файл чтоб потом прочитаться
+
+    uint32_t tex_count = (uint32_t)texture_hashes.size();
+    fwrite(&tex_count, sizeof(uint32_t), 1, ptr);
+    if (tex_count > 0)
+        fwrite(texture_hashes.data(), sizeof(uint32_t), tex_count, ptr);
+
+    fwrite(&rect, sizeof(SDL_Rect), 1, ptr);
+    fwrite(&x, sizeof(int), 1, ptr);
+    fwrite(&y, sizeof(int), 1, ptr);
+    fwrite(&angle, sizeof(float), 1, ptr);
+
+    fwrite(&current_index, sizeof(int), 1, ptr);
+    fwrite(&future_index, sizeof(int), 1, ptr);
+    fwrite(&alpha, sizeof(float), 1, ptr);
+    fwrite(&texture_change_speed, sizeof(float), 1, ptr);
+    fwrite(&transition_alpha, sizeof(float), 1, ptr);
+    fwrite(&in_fade, sizeof(bool), 1, ptr);
+
+    fwrite(&move_speed, sizeof(float), 1, ptr);
+    fwrite(&move_transition, sizeof(float), 1, ptr);
+    fwrite(&sx, sizeof(int), 1, ptr);
+    fwrite(&sy, sizeof(int), 1, ptr);
+    fwrite(&tx, sizeof(int), 1, ptr);
+    fwrite(&ty, sizeof(int), 1, ptr);
+}
+
+void read_yourself(FILE *ptr, SDL_Renderer* rend){
+    texture_hashes.clear();
+    textures.clear();
+    uint32_t tex_count;
+    fread(&tex_count, sizeof(uint32_t), 1, ptr);
+
+    texture_hashes.resize(tex_count);
+    if (tex_count > 0)
+        fread(texture_hashes.data(), sizeof(uint32_t), tex_count, ptr);
+
+    fread(&rect, sizeof(SDL_Rect), 1, ptr);
+    fread(&x, sizeof(int), 1, ptr);
+    fread(&y, sizeof(int), 1, ptr);
+    fread(&angle, sizeof(float), 1, ptr);
+
+    fread(&current_index, sizeof(int), 1, ptr);
+    fread(&future_index, sizeof(int), 1, ptr);
+    fread(&alpha, sizeof(float), 1, ptr);
+    fread(&texture_change_speed, sizeof(float), 1, ptr);
+    fread(&transition_alpha, sizeof(float), 1, ptr);
+    fread(&in_fade, sizeof(bool), 1, ptr);
+
+    fread(&move_speed, sizeof(float), 1, ptr);
+    fread(&move_transition, sizeof(float), 1, ptr);
+    fread(&sx, sizeof(int), 1, ptr);
+    fread(&sy, sizeof(int), 1, ptr);
+    fread(&tx, sizeof(int), 1, ptr);
+    fread(&ty, sizeof(int), 1, ptr);
+
+    for (uint32_t hash : texture_hashes) {
+        load_hash(rend, hash);
+    }
 }
 
 

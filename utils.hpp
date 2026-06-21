@@ -36,6 +36,9 @@
 
 #define FORCE_CHARS_SHOWN_FLUENCY 0
 
+
+const uint32_t VERSION = 1000;
+
 const int STRING_POOL_SIZE = 65536;
 const int EVENT_POOL_SIZE = 1024;
 const int ARGS_POOL_SIZE = 4096;

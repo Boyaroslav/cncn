@@ -183,10 +183,18 @@ void Screen::load_(char *name)
         LOGI("load_ %s", name);
         #endif
         scenes.clear();
-        if (!IS_CCNVL)
+        
+        if (!IS_CCNVL){
+            file_name = std::string(name);
+
             load_file(name, scenes, &scenes_number);
-        else
+        }
+        else{ // это смена LD_FILE!!!!!!!!!! и грузит от скрипт
+ 
             load_scene_by_name(name, scenes);
+            current_script_name = name;
+        }
+        current_scene_name = "main";
 }
 
 
@@ -233,6 +241,7 @@ bool Screen::change_scene(const char *scene_name)
             printf("Scene '%s' not found!\n", scene_name);
             return false;
         }
+        current_scene_name = scene_name;
         function_commands_left = 0;
         IN_ROW = 0;
         current_event = nullptr;
@@ -998,4 +1007,144 @@ void Screen::exit_program(){
                 exit(0);
         };
     }
+}
+
+bool Screen::can_save() {
+    if (WAITING) return false;
+    if (textbox->IS_INPUT) return false;
+    if (!var_waiting.empty()) return false;
+    if (function_commands_left > 0) return false;
+    if (IN_ROW) return false;
+    if (!lua_runtime.if_available_for_saving()) return false;
+    return true;
+}
+
+void Screen::qsave(){
+
+    update_snapshot();
+    FILE* save_file = fopen("quick_save.ccsave", "wb");
+    if (!save_file) {
+        log("Failed to open save file");
+        return;
+    }
+
+    if (save_snapshot.empty()) return;
+
+    fwrite(save_snapshot.data(), 1, save_snapshot.size(), save_file);
+
+    //uint32_t scene_hash = fnv1a_32(current_scene_name);
+
+    fclose(save_file);
+
+}
+
+void Screen::qload(){
+    epos = 0;
+    apos = 0;
+    spos = 0;
+    textbox->cl();
+
+    IS_CCNVL = 0;
+    FILE* save_file = fopen("quick_save.ccsave", "rb");
+    sprites.clear();
+    uint32_t save_version;
+    fread(&save_version, sizeof(uint32_t), 1, save_file);
+    std::cout<<"VERS "<<save_version<<' '<<VERSION<<"\n";
+    if (save_version > VERSION){
+        log("The game version is too old!");
+        return;
+    }
+    uint32_t nl; fread(&nl, sizeof(uint32_t), 1, save_file);
+    file_name.resize(nl);
+    fread(&file_name[0], sizeof(char), nl, save_file);
+    log("file_name " + std::string(file_name));
+    load_(const_cast<char*>(file_name.c_str()));
+    uint32_t script_len; fread(&script_len, sizeof(uint32_t), 1, save_file);
+    current_script_name.resize(script_len);
+    fread(&current_script_name[0], sizeof(char), script_len, save_file);
+    IS_CCNVL=1;
+    log("script_name " + std::string(current_script_name));
+    if (current_script_name.size() > 0) load_(const_cast<char*>(current_script_name.c_str()));
+    uint32_t scene_hash;
+    fread(&scene_hash, sizeof(uint32_t), 1, save_file);
+    uint32_t scene_len; fread(&scene_len, sizeof(uint32_t), 1, save_file);
+    fread(&current_scene_name[0], sizeof(char), scene_len, save_file);
+    fread(&event_pool_position, sizeof(uint32_t), 1, save_file);
+    load_vars(save_file);
+
+
+    load_scene_by_hash(scene_hash, scenes);
+    int index = find_scene_index_by_hash(scenes, scene_hash);
+    Scene &sc = scenes[index];
+    current_scene = &sc;
+    std::cout<<"SCENE "<<current_scene->name<<"\n";
+
+    bg.read_yourself(save_file, renderer);
+    uint32_t ss; fread(&ss, sizeof(uint32_t), 1, save_file);
+    sprites.reserve(ss);
+    for(int i=0; i<ss; i++){
+        sprites.emplace_back();
+        sprites.back().read_yourself(save_file, renderer);
+    }
+    //change_scene(current_scene_name.c_str());
+
+
+    function_commands_left = 0;
+    IN_ROW = false;
+    WAITING = false;
+    if_result = 1;
+    var_waiting.clear();
+    current_event = nullptr;
+    NEED_MORE_EVENTS = 0;
+
+
+    textbox->read_yourself(save_file);
+
+}
+
+
+void Screen::update_snapshot(){
+    if (!can_save()){
+        return;
+    }
+    char* buf = nullptr;
+    size_t buf_size = 0;
+    FILE* mem_file = open_memstream(&buf, &buf_size);
+    if (!mem_file) return;
+    write_states(mem_file);
+    fflush(mem_file);
+    save_snapshot.assign(buf, buf + buf_size);
+    fclose(mem_file);
+}
+
+
+void Screen::write_states(FILE *save_file){
+    fwrite(&VERSION, sizeof(const uint32_t), 1, save_file);
+    uint32_t name_len = (uint32_t)file_name.size();
+    fwrite(&name_len, sizeof(uint32_t), 1, save_file);
+    std::cout<<"SAVING "<<file_name<<" "<<current_script_name<<"\n";
+    
+    fwrite(file_name.data(), sizeof(char), file_name.size(), save_file);
+    uint32_t script_len = current_script_name.size();
+    fwrite(&script_len, sizeof(uint32_t), 1, save_file);
+    fwrite(current_script_name.data(), sizeof(char), script_len, save_file);
+    uint32_t scene_hash = fnv1a_32(current_scene_name);
+    fwrite(&scene_hash, sizeof(uint32_t), 1, save_file);
+    uint32_t scene_name_len = current_scene_name.size();
+    fwrite(&scene_name_len, sizeof(uint32_t), 1, save_file);
+    fwrite(current_scene_name.data(), sizeof(char), scene_name_len, save_file);
+
+    fwrite(&event_pool_position, sizeof(uint32_t), 1, save_file);
+
+    save_vars(save_file);
+
+    bg.write_yourself(save_file);
+    uint32_t ss = sprites.size();
+    fwrite(&ss, sizeof(uint32_t), 1, save_file);
+    for (Sprite &s: sprites){
+        s.write_yourself(save_file);
+    }
+
+    textbox->write_yourself(save_file);
+
 }
