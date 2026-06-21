@@ -1049,7 +1049,12 @@ bool Screen::can_save() {
 void Screen::qsave(){
 
     update_snapshot();
-    FILE* save_file = fopen("quick_save.ccsave", "wb");
+    FILE* save_file;
+    if (save_path)
+        save_file = fopen(save_path, "wb");
+    else
+        save_file = fopen("quick_save.ccsave", "wb");
+    
     if (!save_file) {
         log("Failed to open save file");
         return;
@@ -1072,7 +1077,11 @@ void Screen::qload(){
     textbox->cl();
 
     IS_CCNVL = 0;
-    FILE* save_file = fopen("quick_save.ccsave", "rb");
+    FILE* save_file;
+    if (save_path)
+        save_file = fopen(save_path, "rb");
+    else
+        save_file = fopen("quick_save.ccsave", "rb");
     sprites.clear();
     uint32_t save_version;
     fread(&save_version, sizeof(uint32_t), 1, save_file);

@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
 
     const char *font_ = getenv("FONT");
 
+    save_path = getenv("QSAVE_FILE");
+
+
     #ifdef __ANDROID__
     LOGI("LCNOVEL: %s", env);
     #endif

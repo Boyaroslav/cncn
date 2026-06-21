@@ -50,6 +50,8 @@ const int DEFAULT_FONT_SIZE = 28;
 const int TEXT_BOX_HORIZONTAL_PADDING = 100;
 const int TEXT_BOX_VERTICAL_PADDING = 20;
 
+const char* save_path = "";
+
 const int REMOVE_LINES = 0; // remove lines when the number reaches max_lines
 
 float LETTER_SPEED = 0.07;
