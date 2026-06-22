@@ -177,6 +177,13 @@ void Screen::start_game(){
             interface = make_pause_menu(width, height, this);
             interface->hide();
             set_if_its_game(1);
+            IS_CCNVL = 0;
+            epos = 0;
+            apos = 0;
+            spos = 0;
+            ccnvl_resources.clear();
+            ccnvl_scenes.clear();
+            load_(file_name.data());
             textbox->show();
             //load_(file_name.data());
             change_scene("main");
@@ -193,13 +200,11 @@ void Screen::main_menu(){
             bg.clear();
             
             set_if_its_game(0);
-            IS_CCNVL = 0;
-            epos = 0;
-            apos = 0;
-            spos = 0;
-            ccnvl_resources.clear();
-            ccnvl_scenes.clear();
-            load_(file_name.data());
+
+            #ifdef __ANDROID__
+            LOGI("LCNOVELFILE %s", file_name.c_str());
+            #endif
+            //load_(file_name.data());
             textbox->move_position(0,0);
             textbox->hide();
             change_scene("menu");
@@ -211,15 +216,16 @@ void Screen::main_menu(){
 
 void Screen::load_(char *name)
     {
+        std::string n(name);
         #ifdef __ANDROID__
         LOGI("load_ %s", name);
         #endif
         scenes.clear();
         
         if (!IS_CCNVL){
-            file_name = std::string(name);
+            file_name = n;
 
-            load_file(name, scenes, &scenes_number);
+            load_file(file_name.c_str(), scenes, &scenes_number);
         }
         else{ // это смена LD_FILE!!!!!!!!!! и грузит от скрипт
  
@@ -270,9 +276,13 @@ bool Screen::change_scene(const char *scene_name)
         int index = find_scene_index_by_name(scenes, scene_name);
         if (index < 0)
         {
+            #ifdef __ANDROID__
+            LOGI("LCNOVEL Scene not found %s", scene_name);
+            #endif
             printf("Scene '%s' not found!\n", scene_name);
             return false;
         }
+
         current_scene_name = scene_name;
         function_commands_left = 0;
         IN_ROW = 0;
@@ -280,9 +290,14 @@ bool Screen::change_scene(const char *scene_name)
         if_result = 1;
         NEED_MORE_EVENTS = 1;
         sprites.clear();
+        var_waiting = "";
 
         Scene &sc = scenes[index];
         current_scene = &sc;
+
+        #ifdef __ANDROID__
+        LOGI("change_scene: idx=%d event_start=%d epos=%d", index, sc.event_start, epos);
+        #endif
 
         event_pool_position = sc.event_start;
 

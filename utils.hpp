@@ -16,7 +16,6 @@
 
 
 #pragma once
-#define _GNU_SOURCE
 #include <iostream>
 #include <string>
 #include <vector>
@@ -101,7 +100,7 @@ void log(std::string msg)
 {
     std::cout << msg << "\n";
     #ifdef __ANDROID__
-    __android_log_print(1, "LCNOVEL", "%s", msg.c_str());
+    LOGI("LCNOVEL LOG %s", msg.c_str());
     #endif
     return;
 
