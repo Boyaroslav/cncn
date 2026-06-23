@@ -275,20 +275,113 @@ SDL_Color interface_text_border = to_sdlc(INTERFACE_TEXT_BORDER_COLOR);
 
 */
 
-
 struct mem_buffer {
     std::vector<char> data;
+    size_t pos = 0;
+    off_t offset;
 };
 
-static int lcnovel_mem_write_cb(void* cookie, const char* buf, int size) {
+
+#ifdef __linux__
+static ssize_t 
+#else
+static int
+#endif
+
+lcnovel_mem_write_cb(void* cookie, const char* buf,
+    #ifdef __linux__
+    size_t
+    #else
+    int
+    #endif
+    size) {
     mem_buffer* mb = static_cast<mem_buffer*>(cookie);
     mb->data.insert(mb->data.end(), buf, buf + size);
     return size;
 }
 
+
 static int lcnovel_mem_close_cb(void*) {
     return 0;
 }
+
+#ifdef __linux__
+static ssize_t 
+#else
+static int
+#endif
+lcnovel_mem_read_cb(void* cookie, char* buf,
+    #ifdef __linux__
+    size_t
+    #else 
+    int
+    #endif
+    size
+){
+
+    mem_buffer* mb = static_cast<mem_buffer*>(cookie);
+    if ((!mb) || (!buf) || (size == 0)) {
+        return -1;
+    }
+
+    size_t bytes_to_copy = std::min(size, mb->data.size());
+    memcpy(buf, mb->data.data() + mb->pos, bytes_to_copy);
+    mb->pos += bytes_to_copy;
+
+    return (int)bytes_to_copy;
+
+}
+
+static int lcnovel_mem_seek_cb(void* cookie, off_t *offset, int whence){
+    off_t newoff;
+    mem_buffer* mb = static_cast<mem_buffer*>(cookie);
+    switch (whence)
+    {
+    case SEEK_SET:
+        newoff = *offset;
+        break;
+    case SEEK_END:
+        newoff = mb->data.size() + *offset;
+
+    break;
+
+    case SEEK_CUR:
+        newoff = mb->pos + *offset;
+    break;
+    
+    default:
+        return -1;
+    }
+
+    mb->offset = newoff;
+    *offset = newoff;
+    return 0;
+
+}
+
+
+#ifdef __linux__
+static FILE* lcnovel_open_mem_stream(mem_buffer* mb){
+    cookie_io_functions_t mfuncs = {
+        .read = lcnovel_mem_read_cb,
+        .write = lcnovel_mem_write_cb,
+        .seek = lcnovel_mem_seek_cb,
+        .close = lcnovel_mem_close_cb
+
+    };
+    auto s = fopencookie(
+        mb,
+        "w+",
+        mfuncs
+
+    );
+    if (s == NULL) {
+        log("fopencookie error");
+    }
+    return s;
+}
+#else
+
 
 static FILE* lcnovel_open_mem_stream(mem_buffer* mb) {
     return funopen(
@@ -299,3 +392,5 @@ static FILE* lcnovel_open_mem_stream(mem_buffer* mb) {
         lcnovel_mem_close_cb
     );
 }
+
+#endif
