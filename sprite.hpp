@@ -74,8 +74,7 @@ public:
             log("CCNVL resource not found: " + std::string(path));
             return nullptr;
         }
-        texture_hashes.push_back(hash);
-
+        
         auto& res = it->second;
         SDL_RWops* rw = SDL_RWFromMem(ccnvl_data + res.offset, res.size);
         if (!rw) return nullptr;
@@ -85,6 +84,7 @@ public:
             log("Failed to load surface from CCNVL: " + std::string(path));
             return nullptr;
         }
+        texture_hashes.push_back(hash);
 
         return surf;
     } 
@@ -100,7 +100,9 @@ public:
 
         auto& res = it->second;
         SDL_RWops* rw = SDL_RWFromMem(ccnvl_data + res.offset, res.size);
-        if (!rw) return;
+        if (!rw){
+            log("!rw!!!");
+            return;}
 
         SDL_Surface* surf = IMG_Load_RW(rw, 1);
         if (!surf) {
@@ -217,6 +219,10 @@ public:
         if (textures.empty()){
             return;
 
+        }
+        if (textures.size() <= current_index){
+            //log("THEY ASK ME TO BREAK GAME  " + std::to_string(current_index));
+            return;
         }
         SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
         SDL_Rect r_ = placed_rect(rect);
@@ -376,8 +382,13 @@ void read_yourself(FILE *ptr, SDL_Renderer* rend){
     fread(&tx, sizeof(int), 1, ptr);
     fread(&ty, sizeof(int), 1, ptr);
 
+
     for (uint32_t hash : texture_hashes) {
         load_hash(rend, hash);
+    }
+
+    if (current_index >= texture_hashes.size()){
+        current_index = 0;
     }
 }
 
