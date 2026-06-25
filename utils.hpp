@@ -266,6 +266,11 @@ long long int max(long long int x, long long int y){
     return y;
 }
 
+long long int min(long long int x, long long int y){
+    if (x <= y){ return x;}
+    return y;
+}
+
 /*
 
 SDL_Color interface_fill = to_sdlc(INTERFACE_FILL_COLOR);
@@ -324,7 +329,7 @@ lcnovel_mem_read_cb(void* cookie, char* buf,
         return -1;
     }
 
-    size_t bytes_to_copy = std::min(size, mb->data.size());
+    size_t bytes_to_copy = min(size, mb->data.size());
     memcpy(buf, mb->data.data() + mb->pos, bytes_to_copy);
     mb->pos += bytes_to_copy;
 

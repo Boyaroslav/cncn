@@ -788,6 +788,12 @@ void Screen::handleEvent(bool isnext_needed)
         break;
         case 38: //HIDE
         {
+            int id = apool[current_event->args_offset].value;
+
+            log("HIDE: " + std::to_string(id));
+            log("INFO " + std::to_string(sprites.size()));
+            sprites[id].hide();
+
 
         }
         break;
@@ -808,6 +814,13 @@ void Screen::handleEvent(bool isnext_needed)
         {
             if(textbox->hidden)textbox->show();
             else{textbox->hide();}
+        }
+        break;
+
+        case 43: // SHOW
+        {
+            int id = apool[current_event->args_offset].value;
+            sprites[id].show();
         }
         break;
         }

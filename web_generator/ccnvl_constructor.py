@@ -34,6 +34,12 @@ def fnv1a_32(s: str) -> int:
 class CCNVLBuilder:
     
     def __init__(self, path="../project1/", outname="../build/test2.ccnvl", start_scene="script.bin"):
+        if not path:
+            path = "../project1/"
+        if not outname:
+            outname = "../build/test2.ccnvl"
+        if not start_scene:
+            start_scene = "script.bin"
         self.path = Path(path).resolve()
         self.outname = outname
         self.dumper_path = "../build/dumper" # надо переделать чтобы он и в stdout печатал результат
@@ -181,8 +187,8 @@ class CCNVLBuilder:
 
 
 if __name__ == "__main__":
-    #b = CCNVLBuilder(input("path: "), input("outname: "), input("start scene: "))
-    b = CCNVLBuilder()
+    b = CCNVLBuilder(input("path: (default=build/)"), input("outname: (default=test2.ccnvl)"), input("start scene: (default=script.bin)"))
+    #b = CCNVLBuilder()
     b.compile_scripts()
     b.scan_resources()
     b.build_index()

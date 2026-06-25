@@ -43,8 +43,10 @@ private:
     float transition_alpha = 1.0f;
     float move_speed = 0.0f; // in sec
     float move_transition = 0.0f;
+    float hide_transition = -1.0f;
     float scale_transition = 0.0f;
     float rotate_transition = 0.0f;
+
     int sx; //start x y (before transition started)
     int sy;
     int tx; // target x y
@@ -196,6 +198,13 @@ public:
             x = sx + (tx - sx) * move_transition;
             y = sy + (ty - sy) * move_transition;
         }
+        if (hide_transition > 0.0f){
+            hide_transition -= (delta_time / texture_change_speed);
+            if (hide_transition <= 0.0f){
+                hide_transition = 0.0f;
+
+            }
+        }
         if (future_index == -1 || texture_change_speed <= 0.0f) return;
 
         transition_alpha += (delta_time / texture_change_speed);
@@ -226,10 +235,15 @@ public:
         }
         SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
         SDL_Rect r_ = placed_rect(rect);
-        if ((future_index == -1) && in_fade) {
+        if((future_index == -1) && hide_transition >= 0.0f){
+            SDL_SetTextureAlphaMod(textures[current_index].texture, Uint8(hide_transition * 255));
+            SDL_RenderCopyEx(rend, textures[current_index].texture, nullptr, &r_, angle, nullptr, SDL_FLIP_NONE);     
+        }
+        else if ((future_index == -1) && in_fade) {
             SDL_SetTextureAlphaMod(textures[current_index].texture, 255);
             SDL_RenderCopyEx(rend, textures[current_index].texture, nullptr, &r_, angle, nullptr, SDL_FLIP_NONE);
-        } else {
+        }
+        else {
             if(in_fade){SDL_SetTextureAlphaMod(textures[current_index].texture, 255);
                 SDL_RenderCopyEx(rend, textures[current_index].texture, nullptr, &r_, angle, nullptr, SDL_FLIP_NONE);
             }
@@ -252,6 +266,18 @@ public:
         rect.y = y_;
         if (w>0) rect.w = w;
         if (h>0) rect.h = h;
+    }
+
+    void hide(){
+        future_index = -1;
+        hide_transition = 1.0f;
+    }
+
+    void show(){
+        future_index = current_index;
+        transition_alpha = 0.0f; in_fade = false;
+        hide_transition = -1.0f;
+
     }
 
     void set_rect(SDL_Rect r){
